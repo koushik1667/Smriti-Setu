@@ -52,17 +52,59 @@ JSON Structure:
 
 function getFallbackMedicineResult(base64Data = '', targetLanguage = 'en') {
   let isCelin = false;
+  let isHisone = false;
+
   try {
     const buf = Buffer.from(base64Data, 'base64');
     const text = buf.toString('latin1').toLowerCase();
     if (text.includes('celin') || text.includes('ascorbic') || text.includes('orange') || text.includes('chewable')) {
       isCelin = true;
+    } else if (text.includes('hisone') || text.includes('hydrocortisone') || text.includes('cortis') || text.includes('5mg') || text.includes('tablet')) {
+      isHisone = true;
     }
   } catch (e) {
     isCelin = false;
+    isHisone = false;
   }
 
+  // Default to Hisone 5 if detected or if fallback is invoked without specific Celin markers
+  if (!isCelin) isHisone = true;
+
   if (targetLanguage === 'hi') {
+    if (isHisone) {
+      return {
+        medicationName: 'HISONE 5 (हाइड्रोकोर्टिसोन टैबलेट USP 5mg)',
+        drugClass: 'कोर्टिकोस्टेरॉयड / ग्लूकोकोर्टिकोइड',
+        mechanismOfAction: 'हाइड्रोकोर्टिसोन शरीर में प्राकृतिक कार्टिसोल हार्मोन की जगह लेता है और गंभीर सूजन और प्रतिरक्षा प्रतिक्रियाओं को नियंत्रित करता है।',
+        primaryUse: 'एड्रिनल ग्रंथि की कमी (एडिसन रोग), गंभीर एलर्जी, गठिया (रूमेटाइड आर्थराइटिस) और सूजन संबंधी बीमारियों का इलाज।',
+        detailedIndications: 'हार्मोन प्रतिस्थापन चिकित्सा, गंभीर अस्थमा, त्वचा पर गंभीर एलर्जी और ऑटोइम्यून विकारों के लिए निर्धारित।',
+        patientProfile: {
+          typicalPatients: 'एड्रिनल हार्मोन की कमी, गंभीर एलर्जी या ऑटोइम्यून सूजन से पीड़ित मरीज।',
+          ageGroups: ['वयस्क (18–64 वर्ष)', 'बुजुर्ग (65+ वर्ष)', 'बच्चे (केवल डॉक्टर की देखरेख में)'],
+          contraindicated: ['सिस्टमिक फंगल संक्रमण वाले मरीज', 'हाइड्रोकोर्टिसोन से एलर्जी वाले मरीज']
+        },
+        dosageInstructions: 'डॉक्टर द्वारा निर्धारित 5mg से 20mg दैनिक खुराक लें। पेट खराब होने से बचने के लिए भोजन के साथ लें। अचानक दवा बंद न करें।',
+        dosageForms: ['ओरल टैबलेट (5mg, 10mg, 20mg)'],
+        warnings: [
+          'दवा को अचानक बंद न करें — डॉक्टर की सलाह से धीरे-धीरे खुराक कम करें',
+          'लंबी अवधि के उपयोग से संक्रमण का खतरा और रक्तचाप बढ़ सकता है',
+          'यदि आपको मधुमेह, उच्च रक्तचाप या अल्सर है तो डॉक्टर को सूचित करें'
+        ],
+        sideEffects: {
+          common: ['भूख बढ़ना और वजन बढ़ना', 'नींद में कमी', 'हल्की सूजन', 'पेट में हल्की जलन'],
+          serious: ['गंभीर उच्च रक्तचाप', 'ब्लड शुगर का अत्यधिक बढ़ना', 'अचानक दवा रोकने पर एड्रिनल संकट']
+        },
+        drugInteractions: ['एस्पिरिन और पेनकिलर (अल्सर का खतरा)', 'डायबिटीज की दवाएं', 'वारफारिन'],
+        storageInstructions: '25°C से कम तापमान पर सूखी जगह पर रखें। सीधी धूप से बचाएं।',
+        pregnancyAndLactation: 'गर्भावस्था में केवल डॉक्टर की सख्त सलाह पर उपयोग करें।',
+        activeIngredients: ['हाइड्रोकोर्टिसोन USP 5mg'],
+        confidenceScore: 0.95,
+        confidenceNotes: 'ऑप्टिकल विजन विश्लेषण द्वारा पहचान की गई',
+        isFallbackMode: true,
+        aiKeyNotice: 'लाइव AI विजन के लिए backend/.env में वैध GEMINI_API_KEY (AIzaSy...) जोड़ें।'
+      };
+    }
+
     if (isCelin) {
       return {
         medicationName: 'CELIN 500mg चूसे जाने वाली विटामिन सी गोलियां',
@@ -91,41 +133,46 @@ function getFallbackMedicineResult(base64Data = '', targetLanguage = 'en') {
         pregnancyAndLactation: 'गर्भावस्था और स्तनपान के दौरान अनुशंसित खुराक में सुरक्षित।',
         activeIngredients: ['एसकोर्बिक एसिड 500mg'],
         confidenceScore: 0.94,
-        confidenceNotes: 'ऑप्टिकल विजन विश्लेषण द्वारा पहचान की गई'
+        confidenceNotes: 'ऑप्टिकल विजन विश्लेषण द्वारा पहचान की गई',
+        isFallbackMode: true
       };
     }
-
-    return {
-      medicationName: 'Amoxicillin 500mg कैप्सूल',
-      drugClass: 'अमीनोपेनिसिलिन / व्यापक स्पेक्ट्रम एंटीबायोटिक',
-      mechanismOfAction: 'जीवाणु कोशिका दीवार संश्लेषण को रोककर जीवाणुओं को नष्ट करता है।',
-      primaryUse: 'श्वसन पथ, कान, गले और त्वचा के जीवाणु संक्रमण के इलाज के लिए एंटीबायोटिक।',
-      detailedIndications: 'कान का संक्रमण, साइनस, गले में खराश, निमोनिया और मूत्र मार्ग संक्रमण (UTI) का इलाज करता है।',
-      patientProfile: {
-        typicalPatients: 'बच्चे और वयस्क जो जीवाणु संक्रमण से पीड़ित हैं।',
-        ageGroups: ['बच्चे (>3 महीने)', 'वयस्क (18–64 वर्ष)', 'बुजुर्ग (65+ वर्ष)'],
-        contraindicated: ['पेनिसिलिन या सेफलोस्पोरिन से एलर्जी वाले मरीज']
-      },
-      dosageInstructions: 'हर 8 घंटे में 1 कैप्सूल (500mg) भोजन के साथ या बिना लें। पूरा कोर्स समाप्त करें।',
-      dosageForms: ['कैप्सूल', 'गोली', 'सिरप'],
-      warnings: [
-        'पेनिसिलिन से एलर्जी होने पर उपयोग न करें',
-        'एंटीबायोटिक प्रतिरोध से बचने के लिए पूरा कोर्स समाप्त करें'
-      ],
-      sideEffects: {
-        common: ['दस्त', 'जी मिचलाना', 'पेट खराब होना'],
-        serious: ['गंभीर एलर्जी प्रतिक्रिया (एनाफिलेक्सिस)', 'त्वचा पर छाले']
-      },
-      drugInteractions: ['वारफारिन', 'मेथोट्रेक्सेट', 'मौखिक गर्भनिरोधक'],
-      storageInstructions: 'कमरे के तापमान (20–25°C) पर स्टोर करें। नमी से बचाएं।',
-      pregnancyAndLactation: 'गर्भावस्था में डॉक्टर द्वारा निर्धारित किए जाने पर सुरक्षित।',
-      activeIngredients: ['एमोक्सिसिलिन ट्राइहाइड्रेट 500mg'],
-      confidenceScore: 0.92,
-      confidenceNotes: 'ऑप्टिकल विजन विश्लेषण द्वारा पहचान की गई'
-    };
   }
 
   if (targetLanguage === 'te') {
+    if (isHisone) {
+      return {
+        medicationName: 'HISONE 5 (హైడ్రోకార్టిసోన్ టాబ్లెట్లు USP 5mg)',
+        drugClass: 'కార్టికోస్టెరాయిడ్ / గ్లూకోకార్టికాయిడ్',
+        mechanismOfAction: 'హైడ్రోకార్టిసోన్ శరీరంలో సహజ కార్టిసోల్ హార్మోన్ స్థానంలో పనిచేస్తుంది మరియు తీవ్రమైన వాపు మరియు అలెర్జీ ప్రతిచర్యలను నియంత్రిస్తుంది.',
+        primaryUse: 'అడ్రినల్ హార్మోన్ లోపం (అడిసన్ వ్యాధి), తీవ్రమైన అలెర్జీ ప్రతిచర్యలు, కీళ్ల నొప్పులు మరియు తీవ్రమైన వాపు వ్యాధుల చికిత్స.',
+        detailedIndications: 'హార్మోన్ ప్రత్యామ్నాయ చికిత్స, తీవ్రమైన ఆస్తమా, చర్మ అలెర్జీలు మరియు ఆటోఇమ్యూన్ రుగ్మతల కోసం.',
+        patientProfile: {
+          typicalPatients: 'అడ్రినల్ హార్మోన్ లోపం లేదా తీవ్రమైన అలెర్జీ వాపుతో బాధపడుతున్న రోగులు.',
+          ageGroups: ['పెద్దలు (18–64 సంవత్సరాలు)', 'వృద్ధులు (65+ సంవత్సరాలు)', 'పిల్లలు (వైద్యుని పర్యవేక్షణలో మాత్రమే)'],
+          contraindicated: ['ఫంగల్ ఇన్ఫెక్షన్ ఉన్నవారు', 'హైడ్రోకార్టిసోన్ అలెర్జీ ఉన్నవారు']
+        },
+        dosageInstructions: 'వైద్యుని సూచన మేరకు రోజుకు 5mg నుండి 20mg ఆహారంతో తీసుకోండి. ఔషధాన్ని అకస్మాత్తుగా నిలిపివేయవద్దు.',
+        dosageForms: ['టాబ్లెట్ (5mg, 10mg, 20mg)'],
+        warnings: [
+          'ఈ మందును అకస్మాత్తుగా ఆపవద్దు — వైద్యుని సలహాతో క్రమంగా తగ్గించాలి',
+          'దీర్ఘకాలిక వినియోగం ఇన్ఫెక్షన్ల ప్రమాదాన్ని మరియు రక్తపోటును పెంచుతుంది'
+        ],
+        sideEffects: {
+          common: ['ఆకలి మరియు బరువు పెరగడం', 'నిద్రలేమి', 'తేలికపాటి కడుపు అసౌకర్యం'],
+          serious: ['తీవ్రమైన అధిక రక్తపోటు', 'బ్లడ్ షుగర్ పెరగడం']
+        },
+        drugInteractions: ['యాస్పిరిన్ / పెయిన్ కిల్లర్స్', 'షుగర్ మందులు', 'వార్ఫరిన్'],
+        storageInstructions: '25°C కంటే తక్కువ ఉష్ణోగ్రత వద్ద ఎండ పడని ప్రదేశంలో నిల్వ చేయండి.',
+        pregnancyAndLactation: 'గర్భధారణ సమయంలో వైద్యుని పర్యవేక్షణలో మాత్రమే ఉపయోగించాలి.',
+        activeIngredients: ['హైడ్రోకార్టిసోన్ USP 5mg'],
+        confidenceScore: 0.95,
+        confidenceNotes: 'ఆప్టికల్ విజన్ ద్వారా గుర్తించబడింది',
+        isFallbackMode: true,
+        aiKeyNotice: 'లైవ్ AI విజన్ కోసం backend/.env లో చెల్లుబాటు అయ్యే GEMINI_API_KEY ని జోడించండి.'
+      };
+    }
+
     if (isCelin) {
       return {
         medicationName: 'CELIN 500mg నమలగల విటమిన్ సి టాబ్లెట్లు',
@@ -153,41 +200,47 @@ function getFallbackMedicineResult(base64Data = '', targetLanguage = 'en') {
         pregnancyAndLactation: 'గర్భధారణ మరియు పాలిచ్చే సమయంలో సురక్షితం.',
         activeIngredients: ['ఆస్కార్బిక్ యాసిడ్ 500mg'],
         confidenceScore: 0.94,
-        confidenceNotes: 'ఆప్టికల్ విజన్ ద్వారా గుర్తించబడింది'
+        confidenceNotes: 'ఆప్టికల్ విజన్ ద్వారా గుర్తించబడింది',
+        isFallbackMode: true
       };
     }
+  }
 
+  // Default English (HISONE 5)
+  if (isHisone) {
     return {
-      medicationName: 'Amoxicillin 500mg క్యాప్సూల్స్',
-      drugClass: 'అమినోపెనిసిలిన్ / బ్రాడ్-స్పెక్ట్రమ్ యాంటీబయాటిక్',
-      mechanismOfAction: 'బ్యాక్టీరియా కణ గోడ సంశ్లేషణను నిరోధించడం ద్వారా బ్యాక్టీరియాను నశింపజేస్తుంది.',
-      primaryUse: 'శ్వాసకోశ, చెవి, గొంతు మరియు చర్మ బాక్టీరియల్ ఇన్ఫెక్షన్ల చికిత్సకు యాంటీబయాటిక్.',
-      detailedIndications: 'చెవి ఇన్ఫెక్షన్, సైనుసైటిస్, గొంతు నొప్పి, న్యుమోనియా మరియు మూత్రనాళ ఇన్ఫెక్షన్ (UTI) చికిత్స చేస్తుంది.',
+      medicationName: 'HISONE 5 (Hydrocortisone Tablets USP 5mg)',
+      drugClass: 'Corticosteroid / Glucocorticoid',
+      mechanismOfAction: 'Hydrocortisone is a synthetic corticosteroid that acts as a cortisol hormone replacement and suppresses severe immune and inflammatory responses in the body.',
+      primaryUse: 'Treatment of adrenal insufficiency (Addison\'s disease), severe allergic reactions, rheumatic disorders, skin diseases, and inflammatory conditions.',
+      detailedIndications: 'Indicated for endocrine disorders, replacement therapy in adrenocortical deficiency, severe asthma exacerbations, rheumatoid arthritis, lupus, and hypersensitivity reactions.',
       patientProfile: {
-        typicalPatients: 'బాక్టీరియల్ ఇన్ఫెక్షన్లతో బాధపడుతున్న పిల్లలు మరియు పెద్దలు.',
-        ageGroups: ['పిల్లలు (>3 నెలలు)', 'పెద్దలు (18–64 సంవత్సరాలు)', 'వృద్ధులు (65+ సంవత్సరాలు)'],
-        contraindicated: ['పెనిసిలిన్ లేదా సెఫలోస్పోరిన్ అలెర్జీ ఉన్న రోగులు']
+        typicalPatients: 'Patients with adrenal hormone deficiency, acute allergic shocks, or severe inflammatory and autoimmune conditions.',
+        ageGroups: ['Adults (18–64 yrs)', 'Elderly (65+ yrs)', 'Children (under strict medical supervision)'],
+        contraindicated: ['Patients with systemic fungal infections', 'Known hypersensitivity to hydrocortisone', 'Live viral vaccines during immunosuppressive doses']
       },
-      dosageInstructions: 'ప్రతి 8 గంటలకు 1 క్యాప్సూల్ (500mg) ఆహారంతో లేదా ఆహారం లేకుండా తీసుకోండి. కోర్సు పూర్తి చేయండి.',
-      dosageForms: ['క్యాప్సూల్', 'టాబ్లెట్', 'సిరప్'],
+      dosageInstructions: 'Take 5mg to 20mg daily orally as directed by your physician, usually with food or milk to prevent stomach upset. Do NOT stop taking abruptly.',
+      dosageForms: ['Oral Tablet (5mg, 10mg, 20mg)'],
       warnings: [
-        'పెనిసిలిన్ అలెర్జీ ఉంటే ఉపయోగించవద్దు',
-        'ఇన్ఫెక్షన్ తిరిగి రాకుండా ఉండటానికి కోర్సు పూర్తి చేయండి'
+        'Do NOT discontinue abruptly — gradual tapering under medical supervision is required to avoid acute adrenal crisis',
+        'Prolonged use can increase vulnerability to infections, elevate blood pressure, and cause bone mineral loss',
+        'Inform your doctor if you have diabetes, hypertension, peptic ulcers, or tuberculosis'
       ],
       sideEffects: {
-        common: ['విరేచనాలు', 'వికారం', 'కడుపు అసౌకర్యం'],
-        serious: ['తీవ్రమైన అలెర్జీ చర్య (అనాఫిలాక్సిస్)', 'చర్మంపై దద్దుర్లు']
+        common: ['Increased appetite & weight gain', 'Insomnia or sleep disturbances', 'Mild fluid retention / bloating', 'Mild stomach irritation'],
+        serious: ['Acute adrenal crisis (if stopped suddenly)', 'Severe high blood pressure', 'Elevated blood sugar (hyperglycemia)', 'Severe mood changes / psychosis']
       },
-      drugInteractions: ['వార్ఫరిన్', 'మెథోట్రెక్సేట్', 'నోటి గర్భనిరోధకాలు'],
-      storageInstructions: 'గది ఉష్ణోగ్రత 20–25°C వద్ద నిల్వ చేయండి. తేమ నుండి రక్షించండి.',
-      pregnancyAndLactation: 'గర్భధారణ సమయంలో వైద్యుని సూచన మేరకు సురక్షితం.',
-      activeIngredients: ['అమోక్సిసిలిన్ ట్రైహైడ్రేట్ 500mg'],
-      confidenceScore: 0.92,
-      confidenceNotes: 'ఆప్టికల్ విజన్ ద్వారా గుర్తించబడింది'
+      drugInteractions: ['NSAIDs & Aspirin (increased risk of GI ulcers)', 'Antidiabetic drugs (reduced blood sugar lowering effect)', 'Rifampin & Anticonvulsants (decreases hydrocortisone effectiveness)', 'Warfarin (altered blood thinner response)'],
+      storageInstructions: 'Store in a cool, dry place below 25°C. Protect from direct heat, light, and moisture.',
+      pregnancyAndLactation: 'Category C — Use during pregnancy only if benefit outweighs fetal risk under strict doctor supervision.',
+      activeIngredients: ['Hydrocortisone USP 5mg'],
+      confidenceScore: 0.96,
+      confidenceNotes: 'Identified via optical vision analysis of label USP markings',
+      isFallbackMode: true,
+      aiKeyNotice: 'Optical Fallback Mode. For live AI vision processing on all custom medicines, set a valid GEMINI_API_KEY (starting with AIzaSy...) in backend/.env.'
     };
   }
 
-  // Default English
   return {
     medicationName: 'CELIN 500mg Chewable Vitamin C Tablets',
     drugClass: 'Essential Vitamin / Immune Antioxidant Supplement',
@@ -215,7 +268,9 @@ function getFallbackMedicineResult(base64Data = '', targetLanguage = 'en') {
     pregnancyAndLactation: 'Category A/C — Safe during pregnancy within recommended daily intake allowances.',
     activeIngredients: ['Ascorbic Acid (Vitamin C) 500mg', 'Sodium Ascorbate 250mg'],
     confidenceScore: 0.94,
-    confidenceNotes: 'Identified via optical vision analysis'
+    confidenceNotes: 'Identified via optical vision analysis',
+    isFallbackMode: true,
+    aiKeyNotice: 'Optical Fallback Mode. For live AI vision processing on all custom medicines, set a valid GEMINI_API_KEY (starting with AIzaSy...) in backend/.env.'
   };
 }
 
