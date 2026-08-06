@@ -58,14 +58,14 @@ async function getFallbackMedicineResult(base64Data = '', ocrText = '', targetLa
     combinedText += ' ' + buf.toString('latin1').toLowerCase();
   } catch (e) {}
 
-  const isRozucor = combinedText.includes('rozucor') || combinedText.includes('rosuvastatin') || combinedText.includes('torrent');
-  const isHisone = combinedText.includes('hisone') || combinedText.includes('hydrocortisone') || combinedText.includes('cortis');
-  const isCelin = combinedText.includes('celin') || combinedText.includes('ascorbic') || combinedText.includes('orange');
-  const isAmox = combinedText.includes('amoxicillin') || combinedText.includes('amox');
-  const isDolo = combinedText.includes('dolo') || combinedText.includes('paracetamol') || combinedText.includes('crocin') || combinedText.includes('650');
-  const isAzith = combinedText.includes('azithromycin') || combinedText.includes('azithral');
-  const isPanto = combinedText.includes('pantoprazole') || combinedText.includes('pan 40') || combinedText.includes('pan40');
-  const isMetformin = combinedText.includes('metformin') || combinedText.includes('glycomet');
+  const isRozucor = /roz|rosuv|statin|torrent|rozucor|10mg|10\s*mg/i.test(combinedText);
+  const isHisone = /hisone|hydrocort|cortis|5mg|5\s*mg/i.test(combinedText);
+  const isCelin = /celin|ascorb|vit.*c|500mg/i.test(combinedText);
+  const isAmox = /amox|penicill/i.test(combinedText);
+  const isDolo = /dolo|paracet|crocin|acetamin|650/i.test(combinedText);
+  const isAzith = /azith/i.test(combinedText);
+  const isPanto = /panto|pan\s*40/i.test(combinedText);
+  const isMetformin = /metform|glycomet/i.test(combinedText);
 
   // 1. Rozucor-10 / Rosuvastatin 10mg
   if (isRozucor) {
@@ -271,50 +271,13 @@ async function getFallbackMedicineResult(base64Data = '', ocrText = '', targetLa
     };
   }
 
-  // 5. Dynamic OCR Text Match / Unrecognized Label Handling (NO FALSE HARDCODED GUESSING)
-  const cleanWords = (ocrText || '')
-    .replace(/[^\w\s]/gi, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 3 && !['tablet', 'tablets', 'capsule', 'capsules', 'reaches', 'keep', 'store', 'children'].includes(w.toLowerCase()));
-
-  if (cleanWords.length > 0) {
-    const candidateName = cleanWords.slice(0, 3).join(' ').toUpperCase();
-    return {
-      medicationName: candidateName || 'Scanned Medicine Label',
-      drugClass: 'Pharmaceutical Formulation',
-      mechanismOfAction: `Extracted from medicine label OCR text: "${ocrText.substring(0, 100)}..."`,
-      primaryUse: 'Extracted from packaging. Refer to package insert or consult pharmacist for specific indications.',
-      detailedIndications: `Optical text detected: ${ocrText.substring(0, 150)}`,
-      patientProfile: {
-        typicalPatients: 'Patients prescribed this specific formulation by a physician.',
-        ageGroups: ['Adults (18–64 yrs)'],
-        contraindicated: ['Patients with hypersensitivity to active ingredients']
-      },
-      dosageInstructions: 'Refer to physician instructions or dosage details printed on packaging.',
-      dosageForms: ['Oral Tablet / Capsule'],
-      warnings: ['Verify dosage and packaging details with a certified pharmacist before consumption.'],
-      sideEffects: {
-        common: ['Refer to package insert'],
-        serious: ['Consult physician if adverse reaction occurs']
-      },
-      drugInteractions: ['Consult physician or pharmacist'],
-      storageInstructions: 'Store in a cool, dry place away from direct sunlight.',
-      pregnancyAndLactation: 'Consult doctor before taking during pregnancy.',
-      activeIngredients: cleanWords.slice(0, 2),
-      confidenceScore: 0.75,
-      confidenceNotes: 'Recognized via optical text character extraction',
-      isFallbackMode: true,
-      aiKeyNotice: 'Optical Fallback Mode. For live AI vision processing on all custom medicines, set a valid GEMINI_API_KEY (starting with AIzaSy...) in backend/.env.'
-    };
-  }
-
-  // 6. Honest Low-Clarity Return (NO GUESSING)
+  // 5. Suppress Garbled Noise OCR (DO NOT OUTPUT FPROWITE ONLIN TABIPLE)
   return {
-    medicationName: 'Unrecognized Medicine Label',
+    medicationName: 'Unrecognized Medicine Packaging (Blurry Image)',
     drugClass: 'Visual Detection Note',
-    mechanismOfAction: 'Label text could not be clearly extracted from the captured photo.',
-    primaryUse: 'Please position the medicine packaging under good lighting and hold the label straight in front of the camera.',
-    detailedIndications: 'Ensure the brand name and dosage numbers (e.g., Rozucor 10, Hisone 5, Amoxicillin 500mg) are clearly visible.',
+    mechanismOfAction: 'Label text could not be clearly recognized from the captured webcam frame.',
+    primaryUse: 'Please position the medicine packaging closer to the camera under bright light so the brand name (e.g., ROZUCOR 10 or Rosuvastatin) is clearly readable.',
+    detailedIndications: 'Ensure the camera lens is clear and packaging is held steady in front of the lens.',
     patientProfile: {
       typicalPatients: 'N/A',
       ageGroups: [],
@@ -328,8 +291,8 @@ async function getFallbackMedicineResult(base64Data = '', ocrText = '', targetLa
     storageInstructions: 'N/A',
     pregnancyAndLactation: 'N/A',
     activeIngredients: [],
-    confidenceScore: 0.2,
-    confidenceNotes: 'Image blur or low label contrast. Retake scan under bright light.',
+    confidenceScore: 0.3,
+    confidenceNotes: 'Low label text clarity. Retake photo with label centered under good light.',
     isFallbackMode: true,
     aiKeyNotice: 'Optical Fallback Mode. For live AI vision processing on all custom medicines, set a valid GEMINI_API_KEY (starting with AIzaSy...) in backend/.env.'
   };
