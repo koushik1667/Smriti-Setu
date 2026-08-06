@@ -824,3 +824,124 @@ hr { border: none; border-top: 1px solid var(--border); }
   line-height: 1.6;
   flex: 1;
 }
+
+/* ─── Mobile Responsive Styles ────────────────────────────────── */
+.mobile-header {
+  display: none;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+
+  .app-shell {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    height: 56px;
+    background: var(--md-sys-color-surface-container);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 64px;
+    background: var(--md-sys-color-surface-container);
+    border-top: 1px solid var(--border);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-elevation-2);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    height: 100%;
+    color: var(--md-sys-color-on-surface-variant);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--md-sys-color-primary);
+    font-weight: 700;
+  }
+
+  .mobile-nav-item.active svg {
+    transform: scale(1.15);
+  }
+
+  .page-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 76px; /* space for fixed mobile bottom nav */
+  }
+
+  .page-inner {
+    padding: 18px 14px;
+  }
+
+  .page-title {
+    font-size: 1.55rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.88rem;
+  }
+
+  .card {
+    padding: 20px !important;
+    border-radius: var(--r-md);
+  }
+
+  .flashcard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-card {
+    padding: 24px;
+    border-radius: var(--r-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .page-inner {
+    padding: 14px 10px;
+  }
+
+  .card {
+    padding: 16px !important;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 12px 16px;
+    font-size: 0.84rem;
+  }
+}
