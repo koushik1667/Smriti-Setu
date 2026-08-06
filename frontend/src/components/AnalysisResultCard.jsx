@@ -59,7 +59,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
             <div style={{ background: '#fff7ed', border: '1px solid #ffedd5', padding: '12px 16px', borderRadius: 'var(--r-md)', color: '#c2410c', fontSize: '0.82rem', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
               <AlertTriangle size={18} color="#c2410c" style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <strong>Optical Vision Mode Active:</strong> {result.aiKeyNotice || 'To enable live AI vision processing on all custom medicines, please configure a valid GEMINI_API_KEY (starting with AIzaSy...) in backend/.env.'}
+                <strong>Optical Vision Mode Active:</strong> {result.aiKeyNotice || 'To enable live AI vision processing on all custom medicines, please configure a valid GEMINI_API_KEY in backend/.env.'}
               </div>
             </div>
           )}

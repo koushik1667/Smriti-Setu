@@ -140,7 +140,7 @@ async function analyzeMedicine(req, res, next) {
       const errMsg = lastError ? lastError.message : 'Gemini AI Vision API key invalid or quota exceeded.';
       return res.status(500).json({
         success: false,
-        message: `Gemini AI Vision Analysis failed: ${errMsg}. Please ensure a valid Google Gemini API Key (starting with AIzaSy...) is set in backend/.env.`
+        message: `Gemini AI Vision Analysis failed: ${errMsg}. Please check your GEMINI_API_KEY in backend/.env.`
       });
     }
 
