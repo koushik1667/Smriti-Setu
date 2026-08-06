@@ -109,11 +109,14 @@ async function analyzeMedicine(req, res, next) {
       }
     }
 
-    // 2. Dynamic Gemini Vision Processing (gemini-2.0-flash, gemini-1.5-flash)
+    // 2. Dynamic Gemini Vision Processing (Gemini 3.5 & 2.5 Models)
     if (!analysisResult && geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
       const candidateModels = [
-        'gemini-2.0-flash',
-        'gemini-1.5-flash'
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+        'gemini-2.0-flash'
       ];
 
       const genAI = new GoogleGenerativeAI(geminiApiKey);
