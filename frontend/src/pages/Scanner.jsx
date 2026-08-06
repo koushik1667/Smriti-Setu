@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { recognize } from 'tesseract.js';
 import { WebcamCapture }     from '../components/WebcamCapture';
 import { AnalysisResultCard } from '../components/AnalysisResultCard';
 import { api } from '../services/api';
@@ -18,21 +17,12 @@ export const Scanner = () => {
     setSaved(false);
 
     try {
-      let ocrText = '';
-      try {
-        const ocrRes = await recognize(base64Image, 'eng');
-        ocrText = ocrRes?.data?.text || '';
-        console.log('[Tesseract OCR Extracted Text]:', ocrText);
-      } catch (ocrErr) {
-        console.warn('[Tesseract OCR Warning]:', ocrErr.message);
-      }
-
-      const res = await api.analyzeMedicine(base64Image, ocrText);
+      const res = await api.analyzeMedicine(base64Image);
       setResult(res.data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
-      setError(err.message || 'Analysis failed. Ensure the medicine label is clearly visible.');
+      setError(err.message || 'Analysis failed. Ensure the medicine label is clearly visible and your Gemini API key is active.');
     } finally {
       setAnalyzing(false);
     }
