@@ -5,6 +5,7 @@ import {
   Thermometer, Baby, LayoutGrid, List, Sparkles, Activity,
   ChevronLeft, ChevronRight, ExternalLink
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const TagList = ({ items, color = 'var(--md-sys-color-on-primary-container)', bg = 'var(--md-sys-color-primary-container)' }) => (
   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -25,6 +26,7 @@ const BulletList = ({ items, color = 'var(--md-sys-color-on-surface)' }) => (
 );
 
 export const AnalysisResultCard = ({ result, loading }) => {
+  const { t } = useLanguage();
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [viewMode, setViewMode] = useState('flashcards'); // 'flashcards' carousel or 'all' stack
 
@@ -32,8 +34,8 @@ export const AnalysisResultCard = ({ result, loading }) => {
     return (
       <div className="card" style={{ padding: '48px', textAlign: 'center' }}>
         <div style={{ width: '52px', height: '52px', borderRadius: 'var(--r-full)', border: '4px solid var(--md-sys-color-primary-container)', borderTopColor: 'var(--md-sys-color-primary)', animation: 'spin 1s linear infinite', margin: '0 auto 24px auto' }} />
-        <h3 style={{ fontSize: '1.15rem', color: 'var(--md-sys-color-on-surface)', fontWeight: 700 }}>Analyzing Medicine Packaging with AI Vision...</h3>
-        <p style={{ fontSize: '0.875rem', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '8px' }}>Reading optical text, active ingredients, dosage markings, and NCBI database details</p>
+        <h3 style={{ fontSize: '1.15rem', color: 'var(--md-sys-color-on-surface)', fontWeight: 700 }}>{t('analyzing')}</h3>
+        <p style={{ fontSize: '0.875rem', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '8px' }}>{t('analyzingDesc')}</p>
       </div>
     );
   }
@@ -46,15 +48,15 @@ export const AnalysisResultCard = ({ result, loading }) => {
   const CARDS = [
     {
       id: 'overview',
-      title: 'Overview & Indication',
-      category: 'Primary Indication',
+      title: t('primaryUse'),
+      category: 'Pharmacology',
       icon: <Pill size={24} color="var(--md-sys-color-primary)" />,
       bgIcon: 'var(--md-sys-color-primary-container)',
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <span className="badge badge-cyan" style={{ marginBottom: '8px', display: 'inline-flex' }}>
-              <Award size={14} /> AI Vision & Optical Analysis
+              <Award size={14} /> AI Vision Analysis
             </span>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: '6px 0' }}>
               {result.medicationName || 'Identified Medication'}
@@ -68,7 +70,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
 
           <div style={{ background: 'var(--md-sys-color-surface-container-low)', padding: '16px 18px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
             <h4 style={{ fontSize: '0.8rem', color: 'var(--md-sys-color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Info size={16} /> Primary Use & Clinical Indication
+              <Info size={16} /> {t('primaryUse')}
             </h4>
             <p style={{ fontSize: '0.94rem', color: 'var(--md-sys-color-on-surface)', lineHeight: 1.6, margin: 0 }}>
               {result.primaryUse || 'No primary indication recorded.'}
@@ -78,7 +80,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
           {result.detailedIndications && (
             <div style={{ background: 'var(--md-sys-color-surface-container-low)', padding: '14px 18px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
               <h4 style={{ fontSize: '0.78rem', color: 'var(--md-sys-color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Activity size={15} /> Extended Conditions Treated
+                <Activity size={15} /> Clinical Indications
               </h4>
               <p style={{ fontSize: '0.88rem', color: 'var(--md-sys-color-on-surface)', lineHeight: 1.5, margin: 0 }}>
                 {result.detailedIndications}
@@ -90,8 +92,8 @@ export const AnalysisResultCard = ({ result, loading }) => {
     },
     {
       id: 'mechanism',
-      title: 'Ingredients & Mechanism',
-      category: 'Pharmacology',
+      title: t('activeIngredients'),
+      category: 'Ingredients',
       icon: <Zap size={24} color="#b45309" />,
       bgIcon: '#fef3c7',
       borderColor: '#fde68a',
@@ -99,7 +101,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <h4 style={{ fontSize: '0.78rem', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px', fontWeight: 700 }}>
-              Active Pharmaceutical Ingredients
+              {t('activeIngredients')}
             </h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {(result.activeIngredients || []).map((ing, idx) => (
@@ -125,15 +127,15 @@ export const AnalysisResultCard = ({ result, loading }) => {
     },
     {
       id: 'dosage',
-      title: 'Dosage & Administration',
-      category: 'Administration Advice',
+      title: t('dosageInstructions'),
+      category: 'Administration',
       icon: <Clock size={24} color="var(--md-sys-color-primary)" />,
       bgIcon: 'var(--md-sys-color-secondary-container)',
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ background: 'var(--md-sys-color-secondary-container)', padding: '16px 18px', borderRadius: 'var(--r-md)' }}>
             <h4 style={{ fontSize: '0.8rem', color: 'var(--md-sys-color-on-secondary-container)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Clock size={16} /> Recommended Dosage Instructions
+              <Clock size={16} /> {t('dosageInstructions')}
             </h4>
             <p style={{ fontSize: '0.94rem', color: 'var(--md-sys-color-on-secondary-container)', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
               {result.dosageInstructions || 'Follow prescribing physician instructions.'}
@@ -143,7 +145,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
           {result.dosageForms && result.dosageForms.length > 0 && (
             <div>
               <h4 style={{ fontSize: '0.78rem', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px', fontWeight: 700 }}>
-                Available Dosage Forms
+                Dosage Forms
               </h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {result.dosageForms.map((form, i) => (
@@ -157,8 +159,8 @@ export const AnalysisResultCard = ({ result, loading }) => {
     },
     {
       id: 'warnings',
-      title: 'Key Warnings & Safety',
-      category: 'Safety Precautions',
+      title: t('warnings'),
+      category: 'Safety',
       icon: <ShieldAlert size={24} color="var(--md-sys-color-error)" />,
       bgIcon: 'var(--md-sys-color-error-container)',
       borderColor: 'rgba(179, 38, 30, 0.3)',
@@ -167,7 +169,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
           {result.warnings && result.warnings.length > 0 ? (
             <div style={{ background: 'var(--md-sys-color-error-container)', padding: '16px 18px', borderRadius: 'var(--r-md)' }}>
               <h4 style={{ fontSize: '0.8rem', color: 'var(--md-sys-color-on-error-container)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ShieldAlert size={16} /> Critical Warnings & Precautions
+                <ShieldAlert size={16} /> {t('warnings')}
               </h4>
               <BulletList items={result.warnings} color="var(--md-sys-color-on-error-container)" />
             </div>
@@ -179,8 +181,8 @@ export const AnalysisResultCard = ({ result, loading }) => {
     },
     {
       id: 'sideeffects',
-      title: 'Possible Side Effects',
-      category: 'Adverse Reactions',
+      title: t('sideEffects'),
+      category: 'Adverse Effects',
       icon: <AlertTriangle size={24} color="#b45309" />,
       bgIcon: '#fffbeb',
       borderColor: '#fde68a',
@@ -209,8 +211,8 @@ export const AnalysisResultCard = ({ result, loading }) => {
     },
     {
       id: 'patient',
-      title: 'Patient Profile & Suitability',
-      category: 'Patient Suitability',
+      title: 'Patient Profile',
+      category: 'Suitability',
       icon: <Users size={24} color="var(--md-sys-color-tertiary)" />,
       bgIcon: 'var(--md-sys-color-tertiary-container)',
       content: (
@@ -237,8 +239,8 @@ export const AnalysisResultCard = ({ result, loading }) => {
     },
     {
       id: 'interactions',
-      title: 'Drug Interactions & Storage',
-      category: 'Compatibility & Storage',
+      title: 'Interactions & Storage',
+      category: 'Compatibility',
       icon: <Thermometer size={24} color="var(--md-sys-color-primary)" />,
       bgIcon: 'var(--md-sys-color-primary-container)',
       content: (
@@ -271,7 +273,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
   if (result.ncbiData) {
     CARDS.push({
       id: 'ncbi',
-      title: 'NCBI / NIH PubChem Record',
+      title: t('ncbiRecord'),
       category: 'Biomedical Database',
       icon: <FlaskConical size={24} color="#0369a1" />,
       bgIcon: '#e0f2fe',
@@ -352,7 +354,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
           style={{ padding: '6px 14px', fontSize: '0.78rem', gap: '6px' }}
         >
           {viewMode === 'flashcards' ? <List size={14} /> : <LayoutGrid size={14} />}
-          {viewMode === 'flashcards' ? 'Show All Cards' : 'Flashcard Carousel'}
+          {viewMode === 'flashcards' ? t('showAllCards') : t('carouselView')}
         </button>
       </div>
 
@@ -378,7 +380,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
               </div>
 
               <span style={{ fontSize: '0.78rem', padding: '4px 12px', borderRadius: 'var(--r-full)', background: 'var(--md-sys-color-secondary-container)', color: 'var(--md-sys-color-on-secondary-container)', fontWeight: 700 }}>
-                Card {safeIndex + 1} of {CARDS.length}
+                {t('cardXofY', { x: safeIndex + 1, y: CARDS.length })}
               </span>
             </div>
 
@@ -405,7 +407,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
                 cursor: safeIndex === 0 ? 'not-allowed' : 'pointer'
               }}
             >
-              <ChevronLeft size={18} /> Previous Card
+              <ChevronLeft size={18} /> {t('previousCard')}
             </button>
 
             {/* Dot Progress Indicator */}
@@ -443,7 +445,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
                 cursor: safeIndex === CARDS.length - 1 ? 'not-allowed' : 'pointer'
               }}
             >
-              Next Card <ChevronRight size={18} />
+              {t('nextCard')} <ChevronRight size={18} />
             </button>
           </div>
 
@@ -459,7 +461,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--md-sys-color-on-surface)', margin: 0 }}>{card.title}</h3>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--md-sys-color-on-surface-variant)' }}>Card {i + 1} of {CARDS.length}</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--md-sys-color-on-surface-variant)' }}>{t('cardXofY', { x: i + 1, y: CARDS.length })}</span>
                 </div>
               </div>
               {card.content}
@@ -474,7 +476,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
       {/* Medical Disclaimer Card */}
       <div style={{ textAlign: 'center', padding: '14px', background: 'var(--md-sys-color-surface-container-low)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
         <p style={{ fontSize: '0.78rem', color: 'var(--md-sys-color-on-surface-variant)', fontStyle: 'italic', margin: 0 }}>
-          * Disclaimer: PharmaVision AI is an assistive visual intelligence tool. Always verify medication details with a qualified healthcare professional or pharmacist.
+          {t('disclaimer')}
         </p>
       </div>
 
@@ -484,6 +486,7 @@ export const AnalysisResultCard = ({ result, loading }) => {
 
 /* Interactive AI Pharmacist Assistant Component */
 const AiPharmacistChatbot = ({ contextResult }) => {
+  const { t } = useLanguage();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -518,7 +521,7 @@ const AiPharmacistChatbot = ({ contextResult }) => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
         <Sparkles size={20} color="var(--md-sys-color-primary)" />
         <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--md-sys-color-on-surface)', margin: 0 }}>
-          AI Pharmacist Q&A Assistant
+          {t('aiPharmacist')}
         </h3>
       </div>
 
@@ -553,7 +556,7 @@ const AiPharmacistChatbot = ({ contextResult }) => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={`Ask about ${contextResult?.medicationName || 'this medicine'} (e.g. food restrictions, missed dose)...`}
+          placeholder={t('askPharmacist')}
           style={{
             flex: 1,
             padding: '10px 16px',
@@ -571,7 +574,7 @@ const AiPharmacistChatbot = ({ contextResult }) => {
           className="btn-primary"
           style={{ padding: '10px 20px', borderRadius: 'var(--r-full)', fontSize: '0.85rem', opacity: loading || !input.trim() ? 0.5 : 1 }}
         >
-          Ask
+          {t('askBtn')}
         </button>
       </form>
     </div>

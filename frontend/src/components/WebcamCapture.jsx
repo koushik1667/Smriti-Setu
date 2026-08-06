@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, RefreshCw, Upload, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { Camera, RefreshCw, Upload, Sparkles, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
+  const { t } = useLanguage();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -9,7 +11,7 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
   const [stream, setStream] = useState(null);
   const [cameraError, setCameraError] = useState('');
   const [capturedImage, setCapturedImage] = useState(null);
-  const [facingMode, setFacingMode] = useState('environment'); // 'user' or 'environment'
+  const [facingMode, setFacingMode] = useState('environment');
 
   const streamRef = useRef(null);
 
@@ -75,7 +77,7 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
 
     const base64Image = canvas.toDataURL('image/jpeg', 0.9);
     setCapturedImage(base64Image);
-    stopWebcam(); // Turn off camera stream track after taking image
+    stopWebcam();
     onCapture(base64Image);
   };
 
@@ -87,7 +89,7 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
     reader.onload = () => {
       const base64Image = reader.result;
       setCapturedImage(base64Image);
-      stopWebcam(); // Turn off camera if active
+      stopWebcam();
       onCapture(base64Image);
     };
     reader.readAsDataURL(file);
@@ -110,15 +112,15 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
         <div>
           <h2 style={{ fontSize: '1.3rem', color: 'var(--md-sys-color-on-surface)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Camera size={22} color="var(--md-sys-color-primary)" />
-            Webcam Scanner
+            {t('scanner')}
           </h2>
-          <p style={{ fontSize: '0.875rem', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px' }}>Align medicine bottle, blister pack, or label within target box</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px' }}>{t('positionMedicine')}</p>
         </div>
 
         {stream && !capturedImage && (
           <button onClick={toggleCamera} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.82rem' }}>
             <RefreshCw size={15} />
-            Switch Cam
+            {t('switchCam')}
           </button>
         )}
       </div>
@@ -142,7 +144,7 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
             {!cameraError && (
               <div style={{ position: 'absolute', inset: '12%', border: '2px dashed var(--md-sys-color-primary-container)', borderRadius: 'var(--r-lg)', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 9999px rgba(28, 27, 31, 0.45)' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--md-sys-color-on-primary-container)', background: 'var(--md-sys-color-primary-container)', padding: '6px 16px', borderRadius: 'var(--r-full)', boxShadow: 'var(--shadow-elevation-1)' }}>
-                  Position Medicine Label Here
+                  {t('positionMedicine')}
                 </span>
               </div>
             )}
@@ -156,7 +158,7 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
             <p style={{ fontSize: '0.92rem', marginBottom: '20px' }}>{cameraError}</p>
             <button onClick={() => fileInputRef.current?.click()} className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.9rem' }}>
               <Upload size={18} />
-              Upload Medicine Image File
+              {t('uploadFile')}
             </button>
           </div>
         )}
@@ -166,17 +168,17 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
 
       {/* Action Controls */}
-      <div style={{ display: 'flex', gap: '14px', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {capturedImage ? (
           <button onClick={handleRetake} className="btn-secondary" disabled={isAnalyzing}>
             <RefreshCw size={18} />
-            Retake / Scan Another
+            {t('retakeScan')}
           </button>
         ) : (
           !cameraError && (
             <button onClick={handleCaptureFrame} className="btn-primary" style={{ width: '100%', maxWidth: '340px' }} disabled={isAnalyzing}>
               <Sparkles size={20} />
-              Capture & Analyze Medicine
+              {t('captureAnalyze')}
             </button>
           )
         )}
@@ -184,7 +186,7 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
         {!capturedImage && !cameraError && (
           <button onClick={() => fileInputRef.current?.click()} className="btn-secondary">
             <Upload size={18} />
-            Upload File
+            {t('uploadFile')}
           </button>
         )}
       </div>

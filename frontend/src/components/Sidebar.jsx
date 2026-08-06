@@ -1,21 +1,24 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageSelector } from './LanguageSelector';
 import {
   LayoutDashboard, Camera, History, User, LogOut, Pill
 } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Home' },
-  { to: '/scanner',   icon: Camera,          label: 'Scanner' },
-  { to: '/history',   icon: History,         label: 'History' },
-  { to: '/profile',   icon: User,            label: 'Profile' },
-];
-
 export const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
+
+  const NAV_ITEMS = [
+    { to: '/dashboard', icon: LayoutDashboard, label: t('home') },
+    { to: '/scanner',   icon: Camera,          label: t('scanner') },
+    { to: '/history',   icon: History,         label: t('history') },
+    { to: '/profile',   icon: User,            label: t('profile') },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -36,8 +39,8 @@ export const Sidebar = () => {
             <Pill size={18} color="#fff" />
           </div>
           <div className="sidebar-brand-text">
-            <h2>PharmaVision</h2>
-            <p>AI Medicine Scanner</p>
+            <h2>{t('appName')}</h2>
+            <p>{t('tagline')}</p>
           </div>
         </div>
 
@@ -56,7 +59,7 @@ export const Sidebar = () => {
           ))}
         </nav>
 
-        {/* Footer — user + theme switch + logout */}
+        {/* Footer — user + language selector + theme switch + logout */}
         <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {user && (
             <div className="sidebar-user">
@@ -68,32 +71,32 @@ export const Sidebar = () => {
             </div>
           )}
           
-          <ThemeToggle style={{ width: '100%', justifyContent: 'center' }} />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between' }}>
+            <LanguageSelector style={{ flex: 1 }} />
+            <ThemeToggle style={{ padding: '8px' }} />
+          </div>
 
           <button className="nav-link" onClick={handleLogout} style={{ color: 'var(--md-sys-color-error)', width: '100%' }}>
             <span className="nav-icon"><LogOut size={16} /></span>
-            Logout
+            {t('logout')}
           </button>
         </div>
       </aside>
 
       {/* MOBILE TOP HEADER BAR */}
       <header className="mobile-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div className="sidebar-logo" style={{ width: '34px', height: '34px' }}>
-            <Pill size={15} color="#fff" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="sidebar-logo" style={{ width: '32px', height: '32px' }}>
+            <Pill size={14} color="#fff" />
           </div>
           <div>
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0 }}>PharmaVision</h2>
-            <p style={{ fontSize: '0.68rem', color: 'var(--md-sys-color-on-surface-variant)', margin: 0 }}>AI Medicine Scanner</p>
+            <h2 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0 }}>{t('appName')}</h2>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <LanguageSelector style={{ padding: '2px 6px' }} />
           <ThemeToggle style={{ padding: '6px' }} />
-          {user && (
-            <div className="user-avatar" style={{ width: '32px', height: '32px', fontSize: '0.75rem' }}>{initials}</div>
-          )}
         </div>
       </header>
 

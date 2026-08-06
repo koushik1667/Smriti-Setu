@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { AppLayout } from './components/AppLayout';
 
 // Auth pages
@@ -31,25 +32,27 @@ const ProtectedRoute = ({ children }) => {
 
 export function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Auth — no sidebar */}
-          <Route path="/login"    element={<Login />} />
-          <Route path="/register" element={<Register />} />
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Auth — no sidebar */}
+            <Route path="/login"    element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* Protected — with sidebar */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/scanner"   element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
-          <Route path="/history"   element={<ProtectedRoute><History /></ProtectedRoute>} />
-          <Route path="/scan/:id"  element={<ProtectedRoute><ScanDetail /></ProtectedRoute>} />
-          <Route path="/profile"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            {/* Protected — with sidebar */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/scanner"   element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
+            <Route path="/history"   element={<ProtectedRoute><History /></ProtectedRoute>} />
+            <Route path="/scan/:id"  element={<ProtectedRoute><ScanDetail /></ProtectedRoute>} />
+            <Route path="/profile"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-          {/* Default */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Default */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

@@ -5,6 +5,10 @@ function getAuthHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function getActiveLanguage() {
+  return localStorage.getItem('pharmavision_lang') || 'en';
+}
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
@@ -55,15 +59,15 @@ export const api = {
 
   getProfile: () => request('/auth/profile'),
 
-  // Vision API
+  // Vision API with Multi-Language Support
   analyzeMedicine: (imageBase64) => request('/analyze-medicine', {
     method: 'POST',
-    body: JSON.stringify({ imageBase64 })
+    body: JSON.stringify({ imageBase64, targetLanguage: getActiveLanguage() })
   }),
 
   chatWithAI: (message, medicineContext) => request('/vision/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, medicineContext })
+    body: JSON.stringify({ message, medicineContext, targetLanguage: getActiveLanguage() })
   }),
 
   // History API
