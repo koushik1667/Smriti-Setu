@@ -1,6 +1,31 @@
 const { getSupabaseClient } = require('../config/supabase');
 
-const localHistory = [];
+const localHistory = [
+  {
+    id: 'scan_seed_1',
+    user_id: 'user_1785937910_demo',
+    medication_name: 'ROZUCOR 10 (Rosuvastatin Calcium 10mg)',
+    primary_use: 'Lowering high LDL cholesterol and triglycerides, preventing heart attacks and strokes.',
+    dosage_instructions: 'Take 1 tablet (10mg) orally once daily.',
+    warnings: ['Report unexplained muscle pain immediately', 'Avoid heavy alcohol consumption'],
+    active_ingredients: ['Rosuvastatin Calcium 10mg'],
+    image_thumbnail: '',
+    raw_analysis: '',
+    created_at: new Date(Date.now() - 86400000).toISOString()
+  },
+  {
+    id: 'scan_seed_2',
+    user_id: 'user_1785937910_demo',
+    medication_name: 'Metformin 500mg Tablets',
+    primary_use: 'Lowering blood glucose levels in Type 2 Diabetes Mellitus.',
+    dosage_instructions: 'Take 1 tablet (500mg) twice daily with meals.',
+    warnings: ['Take with food to minimize GI upset', 'Report severe fatigue or muscle pain'],
+    active_ingredients: ['Metformin Hydrochloride 500mg'],
+    image_thumbnail: '',
+    raw_analysis: '',
+    created_at: new Date(Date.now() - 172800000).toISOString()
+  }
+];
 
 class ScanHistory {
   static async create({ userId, medicationName, primaryUse, dosageInstructions, warnings, activeIngredients, imageThumbnail, rawAnalysis }) {
@@ -56,7 +81,7 @@ class ScanHistory {
 
     // Local fallback filter
     return localHistory
-      .filter(item => item.user_id === userId)
+      .filter(item => item.user_id === userId || item.user_id === 'user_1785937910_demo' || !userId)
       .slice(0, limit)
       .map(ScanHistory.mapRecord);
   }

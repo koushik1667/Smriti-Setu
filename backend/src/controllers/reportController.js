@@ -183,7 +183,7 @@ async function analyzeReport(req, res, next) {
     const userId = req.user ? req.user.id : 'anonymous';
     let userScannedCabinet = [];
     try {
-      userScannedCabinet = await ScanHistory.find({ userId });
+      userScannedCabinet = await ScanHistory.findByUserId(userId);
     } catch (e) {
       console.warn('[Cabinet Search Warning]:', e.message);
     }
