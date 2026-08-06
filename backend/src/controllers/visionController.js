@@ -334,10 +334,10 @@ async function analyzeMedicine(req, res, next) {
     // 2. Try Gemini Vision Models Fallback Array
     if (!analysisResult && geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
       const candidateModels = [
+        'gemini-2.5-flash',
         'gemini-1.5-flash',
-        'gemini-1.5-pro',
         'gemini-2.0-flash',
-        'gemini-2.0-flash-exp'
+        'gemini-1.5-pro'
       ];
 
       const genAI = new GoogleGenerativeAI(geminiApiKey);
