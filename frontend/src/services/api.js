@@ -65,6 +65,12 @@ export const api = {
     body: JSON.stringify({ imageBase64, ocrText, targetLanguage: getActiveLanguage() })
   }),
 
+  // Lab Report Analysis API
+  analyzeReport: (fileBase64, mimeType = 'image/jpeg') => request('/analyze-report', {
+    method: 'POST',
+    body: JSON.stringify({ fileBase64, mimeType, targetLanguage: getActiveLanguage() })
+  }),
+
   chatWithAI: (message, medicineContext) => request('/vision/chat', {
     method: 'POST',
     body: JSON.stringify({ message, medicineContext, targetLanguage: getActiveLanguage() })

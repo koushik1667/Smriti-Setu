@@ -53,6 +53,7 @@ if (express) {
     { method: 'POST', path: '/api/auth/google', handler: require('./controllers/authController').googleLogin },
     { method: 'GET', path: '/api/auth/profile', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/authController').getProfile },
     { method: 'POST', path: '/api/analyze-medicine', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/visionController').analyzeMedicine },
+    { method: 'POST', path: '/api/analyze-report', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/reportController').analyzeReport },
     { method: 'POST', path: '/api/vision/chat', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/visionController').chatWithMedicineAI },
     { method: 'POST', path: '/api/chat', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/visionController').chatWithMedicineAI },
     { method: 'GET', path: '/api/history', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/historyController').getHistory },

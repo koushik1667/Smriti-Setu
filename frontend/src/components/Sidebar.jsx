@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import {
-  LayoutDashboard, Camera, History, User, LogOut, Pill
+  LayoutDashboard, Camera, History, User, LogOut, Pill, FileText
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -14,10 +14,11 @@ export const Sidebar = () => {
   const navigate = useNavigate();
 
   const NAV_ITEMS = [
-    { to: '/dashboard', icon: LayoutDashboard, label: t('home') },
-    { to: '/scanner',   icon: Camera,          label: t('scanner') },
-    { to: '/history',   icon: History,         label: t('history') },
-    { to: '/profile',   icon: User,            label: t('profile') },
+    { to: '/dashboard',       icon: LayoutDashboard, label: t('home') },
+    { to: '/scanner',         icon: Camera,          label: t('scanner') },
+    { to: '/report-analyzer', icon: FileText,        label: 'Report Analyzer' },
+    { to: '/history',         icon: History,         label: t('history') },
+    { to: '/profile',         icon: User,            label: t('profile') },
   ];
 
   const handleLogout = () => {
