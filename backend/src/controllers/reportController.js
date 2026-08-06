@@ -48,86 +48,6 @@ Follow this exact JSON structure:
 }
 `;
 
-function getFallbackReportResult(base64Data = '', targetLanguage = 'en') {
-  let text = '';
-  try {
-    const buf = Buffer.from(base64Data, 'base64');
-    text = buf.toString('latin1').toLowerCase();
-  } catch (e) {}
-
-  const hasCholesterol = text.includes('cholesterol') || text.includes('ldl') || text.includes('lipid') || text.includes('triglyceride');
-  const hasDiabetes = text.includes('glucose') || text.includes('hba1c') || text.includes('sugar') || text.includes('diabetes');
-
-  const outOfRangeBiomarkers = [];
-  const detectedConditions = [];
-  const exerciseAndLifestyle = [];
-
-  if (hasCholesterol || !hasDiabetes) {
-    outOfRangeBiomarkers.push({
-      testName: 'LDL Cholesterol',
-      value: '185 mg/dL',
-      referenceRange: '< 100 mg/dL',
-      status: 'HIGH'
-    });
-    detectedConditions.push({
-      condition: 'Hypercholesterolemia (High LDL Cholesterol)',
-      severity: 'Moderate',
-      description: 'Elevated low-density lipoprotein (LDL) levels detected in lipid panel.'
-    });
-    exerciseAndLifestyle.push({
-      condition: 'Hypercholesterolemia (High LDL Cholesterol)',
-      recommendedExercises: [
-        '30 minutes of daily brisk walking or light jogging',
-        'Moderate aerobic cycling or swimming 4 days a week',
-        'Light resistance training to enhance metabolic lipid clearance'
-      ],
-      dietaryAdvice: [
-        'Increase daily intake of soluble dietary fiber (oats, barley, lentils)',
-        'Reduce intake of saturated fats, fried foods, and trans-fats',
-        'Incorporate omega-3 rich foods (flaxseeds, walnuts)'
-      ],
-      precautions: 'Maintain steady hydration during workouts and avoid sudden extreme physical overexertion.'
-    });
-  }
-
-  if (hasDiabetes) {
-    outOfRangeBiomarkers.push({
-      testName: 'HbA1c Glycated Hemoglobin',
-      value: '8.2 %',
-      referenceRange: '< 5.7 %',
-      status: 'HIGH'
-    });
-    detectedConditions.push({
-      condition: 'Hyperglycemia / Type 2 Diabetes Indicator',
-      severity: 'Moderate',
-      description: 'Elevated HbA1c level indicating higher average blood glucose over past 3 months.'
-    });
-    exerciseAndLifestyle.push({
-      condition: 'Hyperglycemia / Type 2 Diabetes Indicator',
-      recommendedExercises: [
-        '10-15 minute post-meal light walk after lunch and dinner',
-        'Moderate aerobic cardio (30 mins daily) to increase insulin sensitivity',
-        'Bodyweight squats and wall pushes for muscle glucose uptake'
-      ],
-      dietaryAdvice: [
-        'Adopt a low-glycemic index (GI) diet rich in green leafy vegetables',
-        'Avoid sugary drinks, refined flour, and processed sweets'
-      ],
-      precautions: 'Check blood glucose before vigorous exercise and carry a fast-acting carb source.'
-    });
-  }
-
-  return {
-    reportTitle: 'Diagnostic Laboratory Report Analysis',
-    patientSummary: 'Diagnostic analysis of uploaded lab report test values.',
-    outOfRangeBiomarkers,
-    detectedConditions,
-    exerciseAndLifestyle,
-    isFallbackMode: true,
-    aiKeyNotice: 'Operating in local diagnostic mode due to Gemini API rate-limiting. For live multi-model AI, please retry in 60 seconds.'
-  };
-}
-
 async function analyzeReport(req, res, next) {
   try {
     const { fileBase64, mimeType = 'image/jpeg', targetLanguage = 'en' } = req.body;
@@ -146,11 +66,14 @@ async function analyzeReport(req, res, next) {
     let reportAnalysis = null;
     let lastError = null;
 
-    // 1. Try Gemini Vision AI for Report Analysis
+    // 1. Gemini Vision AI for Report Analysis (Pure Multimodal AI)
     if (geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
       const candidateModels = [
-        'gemini-2.0-flash',
-        'gemini-1.5-flash'
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+        'gemini-2.0-flash'
       ];
 
       const genAI = new GoogleGenerativeAI(geminiApiKey);
@@ -175,8 +98,11 @@ async function analyzeReport(req, res, next) {
     }
 
     if (!reportAnalysis) {
-      console.warn('[Report Analyzer Note]: AI rate-limited or unavailable. Using diagnostic report fallback.');
-      reportAnalysis = getFallbackReportResult(base64Data, targetLanguage);
+      const errMsg = lastError ? lastError.message : 'Gemini AI Vision API key invalid or quota exceeded.';
+      return res.status(500).json({
+        success: false,
+        message: `Lab Report Analysis failed: ${errMsg}. Please check your GEMINI_API_KEY in backend/.env.`
+      });
     }
 
     // 2. Fetch User's Scanned Cabinet History for Cross-Matching
