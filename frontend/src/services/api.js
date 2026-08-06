@@ -59,10 +59,10 @@ export const api = {
 
   getProfile: () => request('/auth/profile'),
 
-  // Vision API with Multi-Language Support
-  analyzeMedicine: (imageBase64) => request('/analyze-medicine', {
+  // Vision API with Multi-Language Support & OCR Text Extraction
+  analyzeMedicine: (imageBase64, ocrText = '') => request('/analyze-medicine', {
     method: 'POST',
-    body: JSON.stringify({ imageBase64, targetLanguage: getActiveLanguage() })
+    body: JSON.stringify({ imageBase64, ocrText, targetLanguage: getActiveLanguage() })
   }),
 
   chatWithAI: (message, medicineContext) => request('/vision/chat', {

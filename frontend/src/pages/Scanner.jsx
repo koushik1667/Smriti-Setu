@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { recognize } from 'tesseract.js';
 import { WebcamCapture }     from '../components/WebcamCapture';
 import { AnalysisResultCard } from '../components/AnalysisResultCard';
 import { api } from '../services/api';
@@ -17,7 +18,16 @@ export const Scanner = () => {
     setSaved(false);
 
     try {
-      const res = await api.analyzeMedicine(base64Image);
+      let ocrText = '';
+      try {
+        const ocrRes = await recognize(base64Image, 'eng');
+        ocrText = ocrRes?.data?.text || '';
+        console.log('[Tesseract OCR Extracted Text]:', ocrText);
+      } catch (ocrErr) {
+        console.warn('[Tesseract OCR Warning]:', ocrErr.message);
+      }
+
+      const res = await api.analyzeMedicine(base64Image, ocrText);
       setResult(res.data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
