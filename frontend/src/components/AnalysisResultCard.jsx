@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, ExternalLink
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { api } from '../services/api';
 
 const TagList = ({ items, color = 'var(--md-sys-color-on-primary-container)', bg = 'var(--md-sys-color-primary-container)' }) => (
   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -506,7 +507,6 @@ const AiPharmacistChatbot = ({ contextResult }) => {
     setLoading(true);
 
     try {
-      const { api } = await import('../services/api');
       const res = await api.chatWithAI(userMsg, contextResult);
       setMessages(prev => [...prev, { sender: 'ai', text: res.response || res.message || 'I am strictly programmed to answer questions about your scanned medication.' }]);
     } catch (err) {

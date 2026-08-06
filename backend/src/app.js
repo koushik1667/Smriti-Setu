@@ -55,7 +55,8 @@ if (express) {
     { method: 'POST', path: '/api/analyze-medicine', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/visionController').analyzeMedicine },
     { method: 'POST', path: '/api/vision/chat', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/visionController').chatWithMedicineAI },
     { method: 'POST', path: '/api/chat', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/visionController').chatWithMedicineAI },
-    { method: 'GET', path: '/api/history', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/historyController').getHistory }
+    { method: 'GET', path: '/api/history', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/historyController').getHistory },
+    { method: 'DELETE', path: '/api/history/:id', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/historyController').deleteHistoryItem }
   ];
 
   app = (req, res) => {
@@ -85,6 +86,8 @@ if (express) {
         req.body = {};
       }
 
+      req.params = {};
+
       // Response helper
       res.json = (data) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -96,7 +99,34 @@ if (express) {
         return res;
       };
 
-      const matchedRoute = routes.find(r => r.method === req.method && r.path === parsedUrl.pathname);
+      let matchedRoute = null;
+      for (const r of routes) {
+        if (r.method !== req.method) continue;
+        if (r.path.includes(':')) {
+          const routeParts = r.path.split('/');
+          const urlParts = parsedUrl.pathname.split('/');
+          if (routeParts.length === urlParts.length) {
+            let match = true;
+            const params = {};
+            for (let i = 0; i < routeParts.length; i++) {
+              if (routeParts[i].startsWith(':')) {
+                params[routeParts[i].substring(1)] = urlParts[i];
+              } else if (routeParts[i] !== urlParts[i]) {
+                match = false;
+                break;
+              }
+            }
+            if (match) {
+              req.params = params;
+              matchedRoute = r;
+              break;
+            }
+          }
+        } else if (r.path === parsedUrl.pathname) {
+          matchedRoute = r;
+          break;
+        }
+      }
 
       if (!matchedRoute) {
         res.writeHead(404, { 'Content-Type': 'application/json' });

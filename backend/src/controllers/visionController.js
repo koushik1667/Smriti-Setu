@@ -282,7 +282,7 @@ async function analyzeMedicine(req, res, next) {
         'gemini-1.5-flash',
         'gemini-1.5-pro',
         'gemini-2.0-flash',
-        'gemini-2.5-flash'
+        'gemini-2.0-flash-exp'
       ];
 
       const genAI = new GoogleGenerativeAI(geminiApiKey);
@@ -326,18 +326,18 @@ async function analyzeMedicine(req, res, next) {
       console.warn('[NCBI Lookup Note]:', ncbiErr.message);
     }
 
-    // Save thumbnail string for scan history
-    const thumbnail = `data:${mimeType};base64,${base64Data.substring(0, 500)}...`;
+    // Save valid base64 image data URI string for scan history thumbnail
+    const thumbnail = `data:${mimeType};base64,${base64Data}`;
 
     // Save to Scan History
     const userId = req.user ? req.user.id : 'anonymous';
     const historyItem = await ScanHistory.create({
       userId,
-      medicationName: analysisResult.medicationName,
-      primaryUse: analysisResult.primaryUse,
-      dosageInstructions: analysisResult.dosageInstructions,
-      warnings: analysisResult.warnings,
-      activeIngredients: analysisResult.activeIngredients,
+      medicationName: analysisResult.medicationName || 'Scanned Medication',
+      primaryUse: analysisResult.primaryUse || '',
+      dosageInstructions: analysisResult.dosageInstructions || '',
+      warnings: analysisResult.warnings || [],
+      activeIngredients: analysisResult.activeIngredients || [],
       imageThumbnail: thumbnail,
       rawAnalysis: JSON.stringify(analysisResult)
     });
@@ -402,7 +402,7 @@ Patient Question: "${message}"`;
 
     // 2. Try Gemini Chat API Fallback
     if (!aiResponse && geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
-      const candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+      const candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
       for (const modelName of candidateModels) {
         if (aiResponse) break;
         try {

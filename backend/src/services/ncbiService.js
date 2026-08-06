@@ -42,8 +42,10 @@ class NcbiService {
   static async searchDrugNCBI(query) {
     if (!query || typeof query !== 'string') return null;
 
-    // Clean query (extract primary drug name, remove dosage numbers)
+    // Clean query (extract primary drug name, remove dosage numbers, parentheses, and non-latin script)
     const cleanQuery = query
+      .replace(/\(.*\)/g, '')
+      .replace(/[^\x00-\x7F]+/g, '')
       .replace(/\d+\s*(mg|g|ml|mcg|iu|cap|tab|tablets|capsules)/gi, '')
       .replace(/chewable|effervescent|extra strength|delayed-release/gi, '')
       .trim();
