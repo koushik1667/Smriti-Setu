@@ -6,7 +6,7 @@ const http = require('http');
  */
 class NcbiService {
   /**
-   * Helper function to perform HTTP/HTTPS GET requests with fast 1200ms timeout
+   * Helper function to perform HTTP/HTTPS GET requests
    */
   static fetchJson(url) {
     return new Promise((resolve) => {
@@ -27,7 +27,7 @@ class NcbiService {
         });
       });
       req.on('error', () => resolve(null));
-      req.setTimeout(1200, () => {
+      req.setTimeout(4000, () => {
         req.destroy();
         resolve(null);
       });
@@ -36,12 +36,13 @@ class NcbiService {
 
   /**
    * Searches NCBI PubChem & Entrez E-utilities for drug compound details
-   * @param {string} query - Medication or active ingredient name
+   * @param {string} query - Medication or active ingredient name (e.g., "Ascorbic acid", "Paracetamol", "Amoxicillin")
    * @returns {Promise<Object|null>} Biomedical metadata from NCBI / NIH
    */
   static async searchDrugNCBI(query) {
     if (!query || typeof query !== 'string') return null;
 
+    // Clean query (extract primary drug name, remove dosage numbers)
     const cleanQuery = query
       .replace(/\d+\s*(mg|g|ml|mcg|iu|cap|tab|tablets|capsules)/gi, '')
       .replace(/chewable|effervescent|extra strength|delayed-release/gi, '')
@@ -69,29 +70,26 @@ class NcbiService {
         };
       }
 
-      // 2. Fetch PubChem Description & MeSH concurrently for speed
+      // 2. Fetch PubChem Description & Pharmacology Summary
       let description = null;
-      let meshId = null;
-
       if (pubchemInfo && pubchemInfo.cid) {
         const pubchemDescUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${pubchemInfo.cid}/description/JSON`;
-        const entrezSearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=mesh&term=${encodeURIComponent(cleanQuery)}&retmode=json${apiKeyParam}`;
-
-        const [descData, entrezData] = await Promise.all([
-          NcbiService.fetchJson(pubchemDescUrl),
-          NcbiService.fetchJson(entrezSearchUrl)
-        ]);
-
+        const descData = await NcbiService.fetchJson(pubchemDescUrl);
         if (descData && descData.InformationList && descData.InformationList.Information) {
           const infoItem = descData.InformationList.Information.find(item => item.Description && item.Description.length > 20);
           if (infoItem) {
             description = infoItem.Description;
           }
         }
+      }
 
-        if (entrezData && entrezData.esearchresult && entrezData.esearchresult.idlist && entrezData.esearchresult.idlist.length > 0) {
-          meshId = entrezData.esearchresult.idlist[0];
-        }
+      // 3. Query NCBI Entrez E-utilities MeSH Database for Clinical Classification
+      let meshId = null;
+      const entrezSearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=mesh&term=${encodeURIComponent(cleanQuery)}&retmode=json${apiKeyParam}`;
+      const entrezData = await NcbiService.fetchJson(entrezSearchUrl);
+
+      if (entrezData && entrezData.esearchresult && entrezData.esearchresult.idlist && entrezData.esearchresult.idlist.length > 0) {
+        meshId = entrezData.esearchresult.idlist[0];
       }
 
       if (!pubchemInfo && !description && !meshId) {
@@ -112,7 +110,7 @@ class NcbiService {
         ncbiRefUrl: pubchemInfo?.cid ? `https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemInfo.cid}` : `https://www.ncbi.nlm.nih.gov/mesh/?term=${encodeURIComponent(cleanQuery)}`
       };
     } catch (err) {
-      console.warn('[NCBI Fast Skip Note]:', err.message);
+      console.warn('[NCBI Service Warning]:', err.message);
       return null;
     }
   }

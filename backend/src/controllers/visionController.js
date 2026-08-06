@@ -138,68 +138,78 @@ async function analyzeMedicine(req, res, next) {
     const geminiApiKey = req.headers['x-gemini-api-key'] || process.env.GEMINI_API_KEY;
     let analysisResult = null;
 
-    // 1. OpenAI Fast Vision Attempt (if configured)
+    // 1. Try OpenAI Vision API (GPT-4o / GPT-4o-mini)
     if (OpenAI && openaiApiKey && openaiApiKey.trim() !== '') {
-      try {
-        const openaiClient = new OpenAI({ apiKey: openaiApiKey.trim() });
-        const apiPromise = openaiClient.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: 'Analyze this medication packaging image and return the JSON object.' },
-                { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
-              ]
-            }
-          ],
-          response_format: { type: 'json_object' }
-        });
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('OpenAI Timeout')), 3000));
-        const response = await Promise.race([apiPromise, timeoutPromise]);
-        const content = response.choices[0]?.message?.content;
-        if (content) {
-          analysisResult = JSON.parse(content);
-          console.log('[OpenAI Fast Success] Analyzed packaging using gpt-4o-mini');
+      const openaiModels = ['gpt-4o', 'gpt-4o-mini'];
+      const openaiClient = new OpenAI({ apiKey: openaiApiKey.trim() });
+
+      for (const modelName of openaiModels) {
+        if (analysisResult) break;
+        try {
+          console.log(`[OpenAI Vision Request] Analyzing packaging with model: ${modelName}`);
+          const response = await openaiClient.chat.completions.create({
+            model: modelName,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Analyze this medication packaging image and return the JSON object.' },
+                  { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
+                ]
+              }
+            ],
+            response_format: { type: 'json_object' }
+          });
+
+          const content = response.choices[0]?.message?.content;
+          if (content) {
+            analysisResult = JSON.parse(content);
+            console.log(`[OpenAI Vision Success] Successfully analyzed using model: ${modelName}`);
+          }
+        } catch (openaiErr) {
+          console.warn(`[OpenAI Model ${modelName} Warning]:`, openaiErr.message);
         }
-      } catch (e) {
-        console.warn('[OpenAI Fast Skip]:', e.message);
       }
     }
 
-    // 2. Gemini Fast Vision Attempt (gemini-3.6-flash primary model)
+    // 2. Try Gemini Vision Models Fallback Array
     if (!analysisResult && geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
-      const fastModels = ['gemini-3.6-flash', 'gemini-2.5-flash'];
+      const candidateModels = [
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-2.0-flash',
+        'gemini-2.5-flash',
+        'gemini-3.6-flash'
+      ];
+
       const genAI = new GoogleGenerativeAI(geminiApiKey);
       const imagePart = { inlineData: { data: base64Data, mimeType } };
 
-      for (const modelName of fastModels) {
+      for (const modelName of candidateModels) {
         if (analysisResult) break;
         try {
           const model = genAI.getGenerativeModel({ model: modelName });
-          const apiPromise = model.generateContent([SYSTEM_PROMPT, imagePart]);
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Gemini Timeout')), 2500));
-
-          const result = await Promise.race([apiPromise, timeoutPromise]);
+          const result = await model.generateContent([SYSTEM_PROMPT, imagePart]);
           const textResponse = result.response.text();
           const jsonText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
 
           analysisResult = JSON.parse(jsonText);
-          console.log(`[Fast AI Success] Analyzed packaging using model: ${modelName}`);
+          console.log(`[Gemini Vision AI Success] Analyzed packaging using model: ${modelName}`);
         } catch (geminiErr) {
-          console.warn(`[Fast Model ${modelName} Skipped]:`, geminiErr.message);
+          console.warn(`[Gemini Model ${modelName} Warning]:`, geminiErr.message);
         }
       }
     }
 
-    // 3. Ultra-Fast Optical Recognition Fallback
+    // 3. Optical Recognition & Deterministic Fallback
     if (!analysisResult) {
-      console.log('[Fast Vision Fallback]: Instant optical vision recognition engaged');
+      console.warn('[Vision AI Note]: AI endpoints unavailable or keys unconfigured. Using optical vision recognition.');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       analysisResult = getFallbackMedicineResult(base64Data);
     }
 
-    // NCBI / NIH PubChem Biomedical Verification & Enrichment (Concurrently)
+    // NCBI / NIH PubChem Biomedical Verification & Enrichment
     try {
       const ncbiQuery = (analysisResult.activeIngredients && analysisResult.activeIngredients[0])
         ? analysisResult.activeIngredients[0]
@@ -211,15 +221,15 @@ async function analyzeMedicine(req, res, next) {
         console.log(`[NCBI Drug Lookup Success] Enriched biomedical data for: ${ncbiQuery}`);
       }
     } catch (ncbiErr) {
-      console.warn('[NCBI Lookup Fast Skip]:', ncbiErr.message);
+      console.warn('[NCBI Lookup Note]:', ncbiErr.message);
     }
 
     // Save thumbnail string for scan history
     const thumbnail = `data:${mimeType};base64,${base64Data.substring(0, 500)}...`;
 
-    // Save to Scan History asynchronously
+    // Save to Scan History
     const userId = req.user ? req.user.id : 'anonymous';
-    ScanHistory.create({
+    const historyItem = await ScanHistory.create({
       userId,
       medicationName: analysisResult.medicationName,
       primaryUse: analysisResult.primaryUse,
@@ -228,12 +238,12 @@ async function analyzeMedicine(req, res, next) {
       activeIngredients: analysisResult.activeIngredients,
       imageThumbnail: thumbnail,
       rawAnalysis: JSON.stringify(analysisResult)
-    }).catch(err => console.warn('[History Save Note]:', err.message));
+    });
 
     return res.json({
       success: true,
       data: analysisResult,
-      scanId: 'scan_' + Date.now()
+      scanId: historyItem.id
     });
   } catch (error) {
     next(error);
@@ -273,36 +283,43 @@ Patient Question: "${message}"`;
         const openaiClient = new OpenAI({ apiKey: openaiApiKey.trim() });
         const completion = await openaiClient.chat.completions.create({
           model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 150,
+          messages: [
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 200,
           temperature: 0.2
         });
         aiResponse = completion.choices[0]?.message?.content || '';
         if (aiResponse) {
-          console.log('[OpenAI Chat Fast Success] Answered query using gpt-4o-mini');
+          console.log('[OpenAI Chat Success] Answered chatbot query using gpt-4o-mini');
         }
       } catch (openaiErr) {
-        console.warn('[OpenAI Chat Skip]:', openaiErr.message);
+        console.warn('[OpenAI Chat Warning]:', openaiErr.message);
       }
     }
 
-    // 2. Try Gemini Fast Chat Model
+    // 2. Try Gemini Chat API Fallback
     if (!aiResponse && geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
-      try {
-        const genAI = new GoogleGenerativeAI(geminiApiKey);
-        const model = genAI.getGenerativeModel({
-          model: 'gemini-2.5-flash',
-          generationConfig: { maxOutputTokens: 150, temperature: 0.2 }
-        });
-        const r = await model.generateContent(prompt);
-        aiResponse = r.response.text();
-      } catch (err) {
-        console.warn('[Gemini Chat Skip]:', err.message);
+      const candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+      for (const modelName of candidateModels) {
+        if (aiResponse) break;
+        try {
+          const genAI = new GoogleGenerativeAI(geminiApiKey);
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig: { maxOutputTokens: 200, temperature: 0.2 }
+          });
+          const r = await model.generateContent(prompt);
+          aiResponse = r.response.text();
+        } catch (err) {
+          console.warn(`[Gemini Chat Model ${modelName} Warning]:`, err.message);
+        }
       }
     }
 
-    // 3. Fast Smart Fallback Response
+    // 3. Fallback Response
     if (!aiResponse) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
       aiResponse = `Regarding your scanned medication ${contextName}: ${contextUse ? contextUse + '. ' : ''}Dosage advice: ${contextDosage || 'Refer to package label'}. Please ask any specific question about taking this drug safely.`;
     }
 
