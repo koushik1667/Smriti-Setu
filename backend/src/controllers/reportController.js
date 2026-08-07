@@ -5,7 +5,7 @@ try {
 } catch (e) {
   OpenAI = null;
 }
-const ScanHistory = require('../models/scanHistory');
+const ScanHistory = require('../models/ScanHistory');
 
 const REPORT_SYSTEM_PROMPT = `
 You are PharmaVision AI's Senior Clinical Diagnostic & Lab Report Specialist.
