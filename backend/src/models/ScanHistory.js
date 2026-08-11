@@ -38,16 +38,55 @@ class ScanHistory {
     return ScanHistory.mapRecord(record);
   }
 
-  static async findByUserId(userId, limit = 20) {
-    const supabase = getSupabaseClient();
+  static async createBatch(records = []) {
+    if (!records || records.length === 0) return [];
 
+    const now = Date.now();
+    const formattedRecords = records.map((rec, idx) => ({
+      id: 'scan_' + (now + idx) + '_' + Math.random().toString(36).substring(2, 9),
+      user_id: rec.userId,
+      medication_name: rec.medicationName,
+      primary_use: rec.primaryUse,
+      dosage_instructions: rec.dosageInstructions,
+      warnings: rec.warnings || [],
+      active_ingredients: rec.activeIngredients || [],
+      image_thumbnail: rec.imageThumbnail || '',
+      raw_analysis: rec.rawAnalysis || '',
+      created_at: new Date(now + idx * 1000).toISOString()
+    }));
+
+    const supabase = getSupabaseClient();
     if (supabase) {
       const { data, error } = await supabase
         .from('scan_history')
+        .insert(formattedRecords)
+        .select();
+
+      if (!error && data) {
+        return data.map(ScanHistory.mapRecord);
+      }
+    }
+
+    // Local fallback
+    formattedRecords.forEach(rec => localHistory.unshift(rec));
+    return formattedRecords.map(ScanHistory.mapRecord);
+  }
+
+  static async findByUserId(userId, limit = null) {
+    const supabase = getSupabaseClient();
+
+    if (supabase) {
+      let query = supabase
+        .from('scan_history')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+        .order('created_at', { ascending: false });
+
+      if (limit && Number.isInteger(limit)) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
 
       if (!error && data) {
         return data.map(ScanHistory.mapRecord);
@@ -55,9 +94,8 @@ class ScanHistory {
     }
 
     // Local fallback filter
-    return localHistory
-      .filter(item => item.user_id === userId)
-      .slice(0, limit)
+    const items = localHistory.filter(item => item.user_id === userId);
+    return (limit && Number.isInteger(limit) ? items.slice(0, limit) : items)
       .map(ScanHistory.mapRecord);
   }
 

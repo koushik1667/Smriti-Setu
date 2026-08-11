@@ -12,6 +12,7 @@ import { Register } from './pages/Register';
 import { Dashboard }      from './pages/Dashboard';
 import { Scanner }        from './pages/Scanner';
 import { ReportAnalyzer } from './pages/ReportAnalyzer';
+import { Cabinet }        from './pages/Cabinet';
 import { History }        from './pages/History';
 import { ScanDetail }     from './pages/ScanDetail';
 import { Profile }        from './pages/Profile';
@@ -45,6 +46,7 @@ export function App() {
             <Route path="/dashboard"       element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/scanner"         element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
             <Route path="/report-analyzer" element={<ProtectedRoute><ReportAnalyzer /></ProtectedRoute>} />
+            <Route path="/cabinet"         element={<ProtectedRoute><Cabinet /></ProtectedRoute>} />
             <Route path="/history"         element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/scan/:id"        element={<ProtectedRoute><ScanDetail /></ProtectedRoute>} />
             <Route path="/profile"         element={<ProtectedRoute><Profile /></ProtectedRoute>} />

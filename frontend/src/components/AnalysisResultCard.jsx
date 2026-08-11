@@ -3,10 +3,11 @@ import {
   Pill, ShieldAlert, CheckCircle, Clock, Info, Award,
   Users, AlertTriangle, Zap, Package, FlaskConical,
   Thermometer, Baby, LayoutGrid, List, Sparkles, Activity,
-  ChevronLeft, ChevronRight, ExternalLink
+  ChevronLeft, ChevronRight, ExternalLink, Volume2
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
+import { speakText, stopSpeaking } from '../utils/speechUtils';
 
 const TagList = ({ items, color = 'var(--md-sys-color-on-primary-container)', bg = 'var(--md-sys-color-primary-container)' }) => (
   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -27,9 +28,10 @@ const BulletList = ({ items, color = 'var(--md-sys-color-on-surface)' }) => (
 );
 
 export const AnalysisResultCard = ({ result, loading }) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [viewMode, setViewMode] = useState('flashcards'); // 'flashcards' carousel or 'all' stack
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   if (loading) {
     return (
@@ -389,9 +391,41 @@ export const AnalysisResultCard = ({ result, loading }) => {
                 </div>
               </div>
 
-              <span style={{ fontSize: '0.78rem', padding: '4px 12px', borderRadius: 'var(--r-full)', background: 'var(--md-sys-color-secondary-container)', color: 'var(--md-sys-color-on-secondary-container)', fontWeight: 700 }}>
-                {t('cardXofY', { x: safeIndex + 1, y: CARDS.length })}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => {
+                    if (isSpeaking) {
+                      stopSpeaking();
+                      setIsSpeaking(false);
+                    } else {
+                      setIsSpeaking(true);
+                      const textToRead = `${result.medicationName || ''}. ${result.primaryUse || ''}. ${result.dosageInstructions || ''}`;
+                      speakText(textToRead, lang, () => setIsSpeaking(false));
+                    }
+                  }}
+                  className="btn-ghost"
+                  title={t('listenAudio')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 12px',
+                    borderRadius: 'var(--r-full)',
+                    background: isSpeaking ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-surface-container-low)',
+                    color: isSpeaking ? 'var(--md-sys-color-on-primary)' : 'var(--md-sys-color-on-surface)',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    border: '1px solid var(--border)'
+                  }}
+                >
+                  <Volume2 size={15} />
+                  <span>{isSpeaking ? t('speaking') : t('listenAudio')}</span>
+                </button>
+
+                <span style={{ fontSize: '0.78rem', padding: '4px 12px', borderRadius: 'var(--r-full)', background: 'var(--md-sys-color-secondary-container)', color: 'var(--md-sys-color-on-secondary-container)', fontWeight: 700 }}>
+                  {t('cardXofY', { x: safeIndex + 1, y: CARDS.length })}
+                </span>
+              </div>
             </div>
 
             {/* Card Content Body */}

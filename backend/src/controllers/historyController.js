@@ -3,7 +3,8 @@ const ScanHistory = require('../models/ScanHistory');
 async function getHistory(req, res, next) {
   try {
     const userId = req.user.id;
-    const history = await ScanHistory.findByUserId(userId);
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
+    const history = await ScanHistory.findByUserId(userId, limit);
 
     return res.json({
       success: true,

@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { generateWithFailover } = require('../services/geminiKeyManager');
 let OpenAI;
 try {
   OpenAI = require('openai');
@@ -109,33 +110,20 @@ async function analyzeMedicine(req, res, next) {
       }
     }
 
-    // 2. Dynamic Gemini Vision Processing (Gemini 3.5 & 2.5 Models)
+    // 2. Dynamic Gemini Vision Processing with Multi-Key Pooling & Auto-Failover
     if (!analysisResult && geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
-      const candidateModels = [
-        'gemini-3.5-flash',
-        'gemini-3.5-flash-lite',
-        'gemini-2.5-flash',
-        'gemini-2.5-pro',
-        'gemini-2.0-flash'
-      ];
-
-      const genAI = new GoogleGenerativeAI(geminiApiKey);
-      const imagePart = { inlineData: { data: base64Data, mimeType } };
-
-      for (const modelName of candidateModels) {
-        if (analysisResult) break;
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          const result = await model.generateContent([DYNAMIC_SYSTEM_PROMPT, imagePart]);
-          const textResponse = result.response.text();
-          const jsonText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-
-          analysisResult = JSON.parse(jsonText);
-          console.log(`[Gemini Vision AI Success] Analyzed packaging (${targetLanguage}) using model: ${modelName}`);
-        } catch (geminiErr) {
-          console.warn(`[Gemini Model ${modelName} Warning]:`, geminiErr.message);
-          lastError = geminiErr;
-        }
+      try {
+        const imagePart = { inlineData: { data: base64Data, mimeType } };
+        const response = await generateWithFailover({
+          prompt: DYNAMIC_SYSTEM_PROMPT,
+          parts: [imagePart],
+          overrideKey: req.headers['x-gemini-api-key']
+        });
+        analysisResult = response.data;
+        console.log(`[Gemini Vision AI Success] Analyzed packaging (${targetLanguage}) using Key #${response.keyIndexUsed} (${response.modelUsed})`);
+      } catch (geminiErr) {
+        console.warn('[Gemini Multi-Key Failover Warning]:', geminiErr.message);
+        lastError = geminiErr;
       }
     }
 
@@ -236,22 +224,16 @@ Patient Question: "${message}"`;
       }
     }
 
-    // 2. Try Gemini Chat API Fallback
+    // 2. Try Gemini Chat API Fallback with Multi-Key Failover
     if (!aiResponse && geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
-      const candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
-      for (const modelName of candidateModels) {
-        if (aiResponse) break;
-        try {
-          const genAI = new GoogleGenerativeAI(geminiApiKey);
-          const model = genAI.getGenerativeModel({
-            model: modelName,
-            generationConfig: { maxOutputTokens: 250, temperature: 0.2 }
-          });
-          const r = await model.generateContent(prompt);
-          aiResponse = r.response.text();
-        } catch (err) {
-          console.warn(`[Gemini Chat Model ${modelName} Warning]:`, err.message);
-        }
+      try {
+        const response = await generateWithFailover({
+          prompt,
+          generationConfig: { maxOutputTokens: 250, temperature: 0.2 }
+        });
+        aiResponse = response.rawText || response.data;
+      } catch (err) {
+        console.warn('[Gemini Chat Multi-Key Warning]:', err.message);
       }
     }
 

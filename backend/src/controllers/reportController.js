@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { generateWithFailover } = require('../services/geminiKeyManager');
 let OpenAI;
 try {
   OpenAI = require('openai');
@@ -66,34 +67,22 @@ async function analyzeReport(req, res, next) {
     let reportAnalysis = null;
     let lastError = null;
 
-    // 1. Gemini Vision AI for Report Analysis (Pure Multimodal AI)
+    // 1. Gemini Vision AI for Report Analysis with Multi-Key Failover
     if (geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
-      const candidateModels = [
-        'gemini-3.5-flash',
-        'gemini-3.5-flash-lite',
-        'gemini-2.5-flash',
-        'gemini-2.5-pro',
-        'gemini-2.0-flash'
-      ];
+      try {
+        const filePart = { inlineData: { data: base64Data, mimeType: cleanMimeType } };
+        const prompt = `${REPORT_SYSTEM_PROMPT}\nPlease analyze this lab report and return the JSON object in ${targetLanguage === 'hi' ? 'Hindi (हिंदी)' : targetLanguage === 'te' ? 'Telugu (తెలుగు)' : 'English'}.`;
 
-      const genAI = new GoogleGenerativeAI(geminiApiKey);
-      const filePart = { inlineData: { data: base64Data, mimeType: cleanMimeType } };
-      const prompt = `${REPORT_SYSTEM_PROMPT}\nPlease analyze this lab report and return the JSON object in ${targetLanguage === 'hi' ? 'Hindi (हिंदी)' : targetLanguage === 'te' ? 'Telugu (తెలుగు)' : 'English'}.`;
-
-      for (const modelName of candidateModels) {
-        if (reportAnalysis) break;
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          const result = await model.generateContent([prompt, filePart]);
-          const textResponse = result.response.text();
-          const jsonText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-
-          reportAnalysis = JSON.parse(jsonText);
-          console.log(`[Report AI Analysis Success] Analyzed lab report with model: ${modelName}`);
-        } catch (geminiErr) {
-          console.warn(`[Report AI Model ${modelName} Warning]:`, geminiErr.message);
-          lastError = geminiErr;
-        }
+        const response = await generateWithFailover({
+          prompt,
+          parts: [filePart],
+          overrideKey: req.headers['x-gemini-api-key']
+        });
+        reportAnalysis = response.data;
+        console.log(`[Report AI Success] Analyzed lab report with Key #${response.keyIndexUsed} (${response.modelUsed})`);
+      } catch (geminiErr) {
+        console.warn('[Report AI Multi-Key Warning]:', geminiErr.message);
+        lastError = geminiErr;
       }
     }
 

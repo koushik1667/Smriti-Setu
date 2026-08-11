@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, RefreshCw, Upload, Sparkles, AlertCircle } from 'lucide-react';
+import { Camera, RefreshCw, Upload, Sparkles, AlertCircle, Zap } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
@@ -105,28 +105,28 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
   };
 
   return (
-    <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderRadius: 'var(--r-lg)' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h2 style={{ fontSize: '1.3rem', color: 'var(--md-sys-color-on-surface)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Camera size={22} color="var(--md-sys-color-primary)" />
+          <h2 style={{ fontSize: '1.15rem', color: 'var(--md-sys-color-on-surface)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <Camera size={20} color="var(--md-sys-color-primary)" />
             {t('scanner')}
           </h2>
-          <p style={{ fontSize: '0.875rem', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px' }}>{t('positionMedicine')}</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '2px', margin: 0 }}>{t('positionMedicine')}</p>
         </div>
 
         {stream && !capturedImage && (
-          <button onClick={toggleCamera} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.82rem' }}>
-            <RefreshCw size={15} />
+          <button onClick={toggleCamera} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.78rem', gap: '4px', borderRadius: 'var(--r-full)' }}>
+            <RefreshCw size={14} />
             {t('switchCam')}
           </button>
         )}
       </div>
 
       {/* Camera Viewport / Captured Image Preview */}
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#1c1b1f', borderRadius: 'var(--r-lg)', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-elevation-1)' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', maxHeight: '380px', background: '#0a0a0c', borderRadius: 'var(--r-lg)', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-elevation-2)' }}>
         
         {capturedImage ? (
           <img src={capturedImage} alt="Captured Medicine" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -140,10 +140,19 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: cameraError ? 'none' : 'block' }}
             />
 
-            {/* Target Reticle Overlay */}
+            {/* Futuristic Holographic Reticle & Laser Scanline */}
             {!cameraError && (
-              <div style={{ position: 'absolute', inset: '12%', border: '2px dashed var(--md-sys-color-primary-container)', borderRadius: 'var(--r-lg)', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 9999px rgba(28, 27, 31, 0.45)' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--md-sys-color-on-primary-container)', background: 'var(--md-sys-color-primary-container)', padding: '6px 16px', borderRadius: 'var(--r-full)', boxShadow: 'var(--shadow-elevation-1)' }}>
+              <div style={{ position: 'absolute', inset: '10%', border: '2px dashed rgba(208, 188, 255, 0.4)', borderRadius: 'var(--r-md)', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 9999px rgba(10, 10, 14, 0.48)' }}>
+                {/* 4 HUD Corner Brackets */}
+                <div style={{ position: 'absolute', top: -2, left: -2, width: '20px', height: '20px', borderTop: '3px solid var(--md-sys-color-primary)', borderLeft: '3px solid var(--md-sys-color-primary)' }} />
+                <div style={{ position: 'absolute', top: -2, right: -2, width: '20px', height: '20px', borderTop: '3px solid var(--md-sys-color-primary)', borderRight: '3px solid var(--md-sys-color-primary)' }} />
+                <div style={{ position: 'absolute', bottom: -2, left: -2, width: '20px', height: '20px', borderBottom: '3px solid var(--md-sys-color-primary)', borderLeft: '3px solid var(--md-sys-color-primary)' }} />
+                <div style={{ position: 'absolute', bottom: -2, right: -2, width: '20px', height: '20px', borderBottom: '3px solid var(--md-sys-color-primary)', borderRight: '3px solid var(--md-sys-color-primary)' }} />
+
+                {/* Animated Laser Scanline */}
+                <div style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent 0%, #10b981 30%, #38bdf8 50%, #10b981 70%, transparent 100%)', boxShadow: '0 0 12px #38bdf8, 0 0 24px #10b981', animation: 'laserScan 2.5s ease-in-out infinite' }} />
+
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--md-sys-color-on-primary-container)', background: 'var(--md-sys-color-primary-container)', padding: '5px 14px', borderRadius: 'var(--r-full)', boxShadow: 'var(--shadow-elevation-1)', opacity: 0.95 }}>
                   {t('positionMedicine')}
                 </span>
               </div>
@@ -153,11 +162,11 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
 
         {/* Camera Hardware Error / Fallback */}
         {cameraError && !capturedImage && (
-          <div style={{ padding: '36px', textAlign: 'center', color: 'var(--md-sys-color-on-surface-variant)' }}>
-            <AlertCircle size={44} color="var(--amber)" style={{ margin: '0 auto 14px auto', display: 'block' }} />
-            <p style={{ fontSize: '0.92rem', marginBottom: '20px' }}>{cameraError}</p>
-            <button onClick={() => fileInputRef.current?.click()} className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.9rem' }}>
-              <Upload size={18} />
+          <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--md-sys-color-on-surface-variant)' }}>
+            <AlertCircle size={36} color="var(--amber)" style={{ margin: '0 auto 10px auto', display: 'block' }} />
+            <p style={{ fontSize: '0.85rem', marginBottom: '16px' }}>{cameraError}</p>
+            <button onClick={() => fileInputRef.current?.click()} className="btn-primary" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>
+              <Upload size={16} />
               {t('uploadFile')}
             </button>
           </div>
@@ -167,26 +176,26 @@ export const WebcamCapture = ({ onCapture, isAnalyzing }) => {
       <canvas ref={canvasRef} style={{ display: 'none' }} />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
 
-      {/* Action Controls */}
-      <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+      {/* Action Controls - Ergonomic Mobile Buttons */}
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
         {capturedImage ? (
-          <button onClick={handleRetake} className="btn-secondary" disabled={isAnalyzing}>
-            <RefreshCw size={18} />
+          <button onClick={handleRetake} className="btn-secondary" disabled={isAnalyzing} style={{ flex: 1 }}>
+            <RefreshCw size={16} />
             {t('retakeScan')}
           </button>
         ) : (
           !cameraError && (
-            <button onClick={handleCaptureFrame} className="btn-primary" style={{ width: '100%', maxWidth: '340px' }} disabled={isAnalyzing}>
-              <Sparkles size={20} />
-              {t('captureAnalyze')}
+            <button onClick={handleCaptureFrame} className="btn-primary" style={{ flex: 2, justifyContent: 'center' }} disabled={isAnalyzing}>
+              <Sparkles size={18} />
+              {isAnalyzing ? 'Analyzing...' : t('captureAnalyze')}
             </button>
           )
         )}
 
         {!capturedImage && !cameraError && (
-          <button onClick={() => fileInputRef.current?.click()} className="btn-secondary">
-            <Upload size={18} />
-            {t('uploadFile')}
+          <button onClick={() => fileInputRef.current?.click()} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }} title={t('uploadFile')}>
+            <Upload size={16} />
+            <span style={{ fontSize: '0.82rem' }}>{t('uploadFile')}</span>
           </button>
         )}
       </div>

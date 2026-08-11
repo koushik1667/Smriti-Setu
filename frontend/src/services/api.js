@@ -71,6 +71,24 @@ export const api = {
     body: JSON.stringify({ fileBase64, mimeType, targetLanguage: getActiveLanguage() })
   }),
 
+  // Doctor Prescription Analysis API
+  analyzePrescription: (fileBase64, mimeType = 'image/jpeg') => request('/analyze-prescription', {
+    method: 'POST',
+    body: JSON.stringify({ fileBase64, mimeType, targetLanguage: getActiveLanguage() })
+  }),
+
+  // Dual Consultation Audit API (Lab Report + Doctor Prescription)
+  analyzeDualAudit: (labFileBase64, labMimeType = 'image/jpeg', rxFileBase64, rxMimeType = 'image/jpeg') => request('/analyze-dual-audit', {
+    method: 'POST',
+    body: JSON.stringify({ labFileBase64, labMimeType, rxFileBase64, rxMimeType, targetLanguage: getActiveLanguage() })
+  }),
+
+  // Batch Save Prescription Medicines to Cabinet
+  saveBatchToCabinet: (medicines, imageThumbnail = '') => request('/history/batch', {
+    method: 'POST',
+    body: JSON.stringify({ medicines, imageThumbnail })
+  }),
+
   chatWithAI: (message, medicineContext) => request('/vision/chat', {
     method: 'POST',
     body: JSON.stringify({ message, medicineContext, targetLanguage: getActiveLanguage() })
