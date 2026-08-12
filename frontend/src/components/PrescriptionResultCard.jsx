@@ -6,6 +6,8 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, List, Award, AlertOctagon
 } from 'lucide-react';
 import { api } from '../services/api';
+import { checkAllergenConflicts } from '../utils/allergenShield';
+import { AllergenAlertBanner } from './AllergenAlertBanner';
 
 export const PrescriptionResultCard = ({ result, loading, onSavedToCabinet, imageThumbnail }) => {
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -343,8 +345,16 @@ export const PrescriptionResultCard = ({ result, loading, onSavedToCabinet, imag
   const safeIndex = Math.min(activeCardIndex, CARDS.length - 1);
   const currentCard = CARDS[safeIndex];
 
+  // Aggregate allergen and condition conflicts across all prescribed medicines
+  const prescriptionConflicts = (medicines || []).flatMap(med => checkAllergenConflicts(med));
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+      {/* Flashing Allergen / Contraindication Alert Banner */}
+      {prescriptionConflicts.length > 0 && (
+        <AllergenAlertBanner conflicts={prescriptionConflicts} />
+      )}
 
       {/* Top Controls: Quick Tab Pills + View Mode Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>

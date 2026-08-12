@@ -9,6 +9,19 @@ function getActiveLanguage() {
   return localStorage.getItem('pharmavision_lang') || 'en';
 }
 
+// ─── High-Performance Client-Side SWR & Memory Cache ────────────────────────
+let memoryHistoryCache = null;
+let lastHistoryFetchTime = 0;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds fresh cache
+
+export const invalidateHistoryCache = () => {
+  memoryHistoryCache = null;
+  lastHistoryFetchTime = 0;
+  try {
+    sessionStorage.removeItem('pv_history_cache');
+  } catch (e) {}
+};
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
@@ -42,28 +55,41 @@ async function request(endpoint, options = {}) {
 
 export const api = {
   // Auth API
-  register: (name, email, password) => request('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify({ name, email, password })
-  }),
+  register: (name, email, password) => {
+    invalidateHistoryCache();
+    return request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password })
+    });
+  },
 
-  login: (email, password) => request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password })
-  }),
+  login: (email, password) => {
+    invalidateHistoryCache();
+    return request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+  },
 
-  loginWithGoogle: (googleData) => request('/auth/google', {
-    method: 'POST',
-    body: JSON.stringify(googleData)
-  }),
+  loginWithGoogle: (googleData) => {
+    invalidateHistoryCache();
+    return request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(googleData)
+    });
+  },
 
   getProfile: () => request('/auth/profile'),
 
   // Vision API with Multi-Language Support & OCR Text Extraction
-  analyzeMedicine: (imageBase64, ocrText = '') => request('/analyze-medicine', {
-    method: 'POST',
-    body: JSON.stringify({ imageBase64, ocrText, targetLanguage: getActiveLanguage() })
-  }),
+  analyzeMedicine: async (imageBase64, ocrText = '') => {
+    const res = await request('/analyze-medicine', {
+      method: 'POST',
+      body: JSON.stringify({ imageBase64, ocrText, targetLanguage: getActiveLanguage() })
+    });
+    invalidateHistoryCache();
+    return res;
+  },
 
   // Lab Report Analysis API
   analyzeReport: (fileBase64, mimeType = 'image/jpeg') => request('/analyze-report', {
@@ -84,17 +110,67 @@ export const api = {
   }),
 
   // Batch Save Prescription Medicines to Cabinet
-  saveBatchToCabinet: (medicines, imageThumbnail = '') => request('/history/batch', {
-    method: 'POST',
-    body: JSON.stringify({ medicines, imageThumbnail })
-  }),
+  saveBatchToCabinet: async (medicines, imageThumbnail = '') => {
+    const res = await request('/history/batch', {
+      method: 'POST',
+      body: JSON.stringify({ medicines, imageThumbnail })
+    });
+    invalidateHistoryCache();
+    return res;
+  },
 
   chatWithAI: (message, medicineContext) => request('/vision/chat', {
     method: 'POST',
     body: JSON.stringify({ message, medicineContext, targetLanguage: getActiveLanguage() })
   }),
 
-  // History API
-  getHistory: () => request('/history'),
-  deleteHistoryItem: (id) => request(`/history/${id}`, { method: 'DELETE' })
+  // Instant SWR Cached History API (0ms Instant Load)
+  getHistory: async (forceRefresh = false) => {
+    const now = Date.now();
+
+    // 1. Return Memory Cache immediately if fresh
+    if (!forceRefresh && memoryHistoryCache && (now - lastHistoryFetchTime < CACHE_TTL_MS)) {
+      return memoryHistoryCache;
+    }
+
+    // 2. Check Session Storage Cache
+    if (!forceRefresh && !memoryHistoryCache) {
+      try {
+        const stored = sessionStorage.getItem('pv_history_cache');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && Array.isArray(parsed.history)) {
+            memoryHistoryCache = parsed;
+            lastHistoryFetchTime = now;
+            // Return cached version immediately and revalidate in background
+            request('/history')
+              .then(freshData => {
+                memoryHistoryCache = freshData;
+                lastHistoryFetchTime = Date.now();
+                sessionStorage.setItem('pv_history_cache', JSON.stringify(freshData));
+              })
+              .catch(() => {});
+            return parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Perform network fetch and update cache
+    const freshData = await request('/history');
+    memoryHistoryCache = freshData;
+    lastHistoryFetchTime = Date.now();
+    try {
+      sessionStorage.setItem('pv_history_cache', JSON.stringify(freshData));
+    } catch (e) {}
+    return freshData;
+  },
+
+  deleteHistoryItem: async (id) => {
+    const res = await request(`/history/${id}`, { method: 'DELETE' });
+    invalidateHistoryCache();
+    return res;
+  },
+
+  invalidateHistoryCache
 };

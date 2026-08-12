@@ -16,6 +16,8 @@ import { Cabinet }        from './pages/Cabinet';
 import { History }        from './pages/History';
 import { ScanDetail }     from './pages/ScanDetail';
 import { Profile }        from './pages/Profile';
+import { PrivacyPolicy }  from './pages/PrivacyPolicy';
+import { TermsOfService }  from './pages/TermsOfService';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -41,6 +43,10 @@ export function App() {
             {/* Auth — no sidebar */}
             <Route path="/login"    element={<Login />} />
             <Route path="/register" element={<Register />} />
+
+            {/* Public Legal Policies */}
+            <Route path="/privacy" element={<AppLayout><PrivacyPolicy /></AppLayout>} />
+            <Route path="/terms"   element={<AppLayout><TermsOfService /></AppLayout>} />
 
             {/* Protected — with sidebar */}
             <Route path="/dashboard"       element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

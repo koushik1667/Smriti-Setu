@@ -8,6 +8,8 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { speakText, stopSpeaking } from '../utils/speechUtils';
+import { checkAllergenConflicts } from '../utils/allergenShield';
+import { AllergenAlertBanner } from './AllergenAlertBanner';
 
 const TagList = ({ items, color = 'var(--md-sys-color-on-primary-container)', bg = 'var(--md-sys-color-primary-container)' }) => (
   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -330,8 +332,16 @@ export const AnalysisResultCard = ({ result, loading }) => {
   const safeIndex = Math.min(activeCardIndex, CARDS.length - 1);
   const currentCard = CARDS[safeIndex];
 
+  // Dynamic Patient Allergen & Condition Conflict Check
+  const allergenConflicts = checkAllergenConflicts(result);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+      {/* Flashing Allergen / Contraindication Alert Banner */}
+      {allergenConflicts.length > 0 && (
+        <AllergenAlertBanner conflicts={allergenConflicts} />
+      )}
 
       {/* Top Controls: Quick Tab Pills + View Mode Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>

@@ -18,21 +18,64 @@ let app;
 
 if (express) {
   const cors = require('cors');
+  const helmet = require('helmet');
+  const rateLimit = require('express-rate-limit');
+
   app = express();
 
+  // Production Security Headers
+  app.use(helmet({
+    contentSecurityPolicy: false, // Disabled for API JSON endpoints
+    crossOriginEmbedderPolicy: false
+  }));
+
+  // CORS Configuration
   app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
 
+  // Body parser with 50mb limit for high-res medicine and report uploads
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+  // Global API Rate Limiter: 150 requests per 15 mins
+  const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 150,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      message: 'Too many requests from this IP. Please try again after a few minutes.'
+    }
+  });
+
+  // Strict AI Vision & Consultation Rate Limiter: 45 AI scans per 15 mins
+  const aiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 45,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      message: 'AI scanning limit reached for this session. Please wait a few minutes before scanning again.'
+    }
+  });
+
+  app.use('/api', globalLimiter);
+  app.use('/api/analyze-medicine', aiLimiter);
+  app.use('/api/analyze-report', aiLimiter);
+  app.use('/api/analyze-prescription', aiLimiter);
+  app.use('/api/analyze-dual-audit', aiLimiter);
+  app.use('/api/vision/chat', aiLimiter);
+
+  // Health check
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'healthy',
-      service: 'PharmaVision AI Backend',
+      service: 'PharmaVision AI Backend (Production Secured)',
       timestamp: new Date().toISOString(),
       env: process.env.NODE_ENV || 'development'
     });

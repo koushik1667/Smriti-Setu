@@ -1,6 +1,16 @@
 const { getSupabaseClient } = require('../config/supabase');
 
 const localHistory = [];
+// In-memory cache per user for lightning-fast repeat queries
+const userCache = new Map();
+
+function invalidateUserCache(userId) {
+  if (userId) {
+    userCache.delete(userId);
+  } else {
+    userCache.clear();
+  }
+}
 
 class ScanHistory {
   static async create({ userId, medicationName, primaryUse, dosageInstructions, warnings, activeIngredients, imageThumbnail, rawAnalysis }) {
@@ -19,6 +29,8 @@ class ScanHistory {
       raw_analysis: rawAnalysis || '',
       created_at: createdAt
     };
+
+    invalidateUserCache(userId);
 
     const supabase = getSupabaseClient();
     if (supabase) {
@@ -55,6 +67,10 @@ class ScanHistory {
       created_at: new Date(now + idx * 1000).toISOString()
     }));
 
+    if (records[0]?.userId) {
+      invalidateUserCache(records[0].userId);
+    }
+
     const supabase = getSupabaseClient();
     if (supabase) {
       const { data, error } = await supabase
@@ -73,12 +89,21 @@ class ScanHistory {
   }
 
   static async findByUserId(userId, limit = null) {
+    const cacheKey = `${userId}_${limit || 'all'}`;
+    const cached = userCache.get(cacheKey);
+    const now = Date.now();
+
+    if (cached && (now - cached.timestamp < 30000)) {
+      return cached.data;
+    }
+
     const supabase = getSupabaseClient();
+    let results = [];
 
     if (supabase) {
       let query = supabase
         .from('scan_history')
-        .select('*')
+        .select('id, user_id, medication_name, primary_use, dosage_instructions, warnings, active_ingredients, image_thumbnail, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -89,17 +114,23 @@ class ScanHistory {
       const { data, error } = await query;
 
       if (!error && data) {
-        return data.map(ScanHistory.mapRecord);
+        results = data.map(ScanHistory.mapRecord);
+        userCache.set(cacheKey, { data: results, timestamp: now });
+        return results;
       }
     }
 
     // Local fallback filter
     const items = localHistory.filter(item => item.user_id === userId);
-    return (limit && Number.isInteger(limit) ? items.slice(0, limit) : items)
+    results = (limit && Number.isInteger(limit) ? items.slice(0, limit) : items)
       .map(ScanHistory.mapRecord);
+    
+    userCache.set(cacheKey, { data: results, timestamp: now });
+    return results;
   }
 
   static async deleteById(id, userId) {
+    invalidateUserCache(userId);
     const supabase = getSupabaseClient();
 
     if (supabase) {

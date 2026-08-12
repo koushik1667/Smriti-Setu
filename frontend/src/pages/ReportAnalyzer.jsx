@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { ReportResultCard } from '../components/ReportResultCard';
 import { PrescriptionResultCard } from '../components/PrescriptionResultCard';
 import { DualAuditResultCard } from '../components/DualAuditResultCard';
+import { LiveAnalysisStepper } from '../components/LiveAnalysisStepper';
 
 export const ReportAnalyzer = () => {
   const { t } = useLanguage();
@@ -300,10 +301,13 @@ export const ReportAnalyzer = () => {
             </div>
 
             <div>
-              {(analyzingDual || dualResult) && (
+              {analyzingDual && (
+                <LiveAnalysisStepper mode="dual" />
+              )}
+              {!analyzingDual && dualResult && (
                 <DualAuditResultCard
                   result={dualResult}
-                  loading={analyzingDual}
+                  loading={false}
                   imageThumbnail={dualRxBase64 || dualLabBase64}
                 />
               )}
@@ -361,10 +365,13 @@ export const ReportAnalyzer = () => {
             </div>
 
             <div>
-              {(analyzingRx || rxResult) && (
+              {analyzingRx && (
+                <LiveAnalysisStepper mode="prescription" />
+              )}
+              {!analyzingRx && rxResult && (
                 <PrescriptionResultCard
                   result={rxResult}
-                  loading={analyzingRx}
+                  loading={false}
                   imageThumbnail={rxFileBase64}
                 />
               )}
@@ -422,8 +429,11 @@ export const ReportAnalyzer = () => {
             </div>
 
             <div>
-              {(analyzingLab || labResult) && (
-                <ReportResultCard result={labResult} loading={analyzingLab} />
+              {analyzingLab && (
+                <LiveAnalysisStepper mode="report" />
+              )}
+              {!analyzingLab && labResult && (
+                <ReportResultCard result={labResult} loading={false} />
               )}
             </div>
           </div>
