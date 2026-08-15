@@ -30,8 +30,11 @@ export const normalizeDrugBaseName = (name = '') => {
     .toLowerCase()
     .replace(/\(.*?\)/g, '') // remove parentheses
     .replace(/(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|iu|%)/gi, '') // remove strengths
+    .replace(/[-_]\d+/g, '') // remove hyphenated numbers e.g. -10, -20, -650
+    .replace(/\b\d+\b/g, '') // remove isolated standalone numbers e.g. 650, 500
     .replace(/tablets?|capsules?|syrup|injection|drops?|cream|gel|suspension|oral/gi, '')
     .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 };
 

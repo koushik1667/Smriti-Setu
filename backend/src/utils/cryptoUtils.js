@@ -16,6 +16,9 @@ try {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pharmavision_super_secret_jwt_key_2026';
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.warn('[Security Notice] JWT_SECRET is not set in production environment variables! Please set a strong JWT_SECRET in production.');
+}
 
 /**
  * Hashes password using bcryptjs or native crypto pbkdf2

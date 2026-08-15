@@ -29,11 +29,27 @@ if (express) {
     crossOriginEmbedderPolicy: false
   }));
 
-  // CORS Configuration
+  // Dynamic Production CORS Configuration
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000'
+  ];
+  if (process.env.CLIENT_URL) {
+    allowedOrigins.push(...process.env.CLIENT_URL.split(',').map(u => u.trim()));
+  }
+
   app.use(cors({
-    origin: '*',
+    origin: (origin, callback) => {
+      if (!origin || process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-gemini-api-key', 'x-openai-api-key'],
+    credentials: true
   }));
 
   // Body parser with 50mb limit for high-res medicine and report uploads

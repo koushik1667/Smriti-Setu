@@ -4,9 +4,10 @@ import {
   Zap, Calendar, User, Building2, Check, ArrowRight, Sparkles,
   Info, ChevronDown, ChevronUp, Sun, Moon, Sunrise, Utensils,
   Activity, Heart, Dumbbell, AlertOctagon, Layers,
-  ChevronLeft, ChevronRight, LayoutGrid, List, Award
+  ChevronLeft, ChevronRight, LayoutGrid, List, Award, FileDown
 } from 'lucide-react';
 import { api } from '../services/api';
+import { generateDualAuditPDF } from '../utils/clinicalPdfExporter';
 
 export const DualAuditResultCard = ({ result, loading, onSavedToCabinet, imageThumbnail }) => {
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -456,14 +457,25 @@ export const DualAuditResultCard = ({ result, loading, onSavedToCabinet, imageTh
           ))}
         </div>
 
-        <button
-          onClick={() => setViewMode(prev => prev === 'flashcards' ? 'all' : 'flashcards')}
-          className="btn-secondary"
-          style={{ padding: '6px 14px', fontSize: '0.78rem', gap: '6px' }}
-        >
-          {viewMode === 'flashcards' ? <List size={14} /> : <LayoutGrid size={14} />}
-          {viewMode === 'flashcards' ? 'Show All Cards' : 'Carousel View'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => generateDualAuditPDF(result)}
+            className="btn-secondary"
+            style={{ padding: '6px 14px', fontSize: '0.78rem', gap: '6px', color: 'var(--md-sys-color-primary)' }}
+            title="Download printable consultation sheet for doctor"
+          >
+            <FileDown size={14} /> Download Clinical PDF
+          </button>
+
+          <button
+            onClick={() => setViewMode(prev => prev === 'flashcards' ? 'all' : 'flashcards')}
+            className="btn-secondary"
+            style={{ padding: '6px 14px', fontSize: '0.78rem', gap: '6px' }}
+          >
+            {viewMode === 'flashcards' ? <List size={14} /> : <LayoutGrid size={14} />}
+            {viewMode === 'flashcards' ? 'Show All Cards' : 'Carousel View'}
+          </button>
+        </div>
       </div>
 
       {/* FLASHCARDS CAROUSEL VIEW */}

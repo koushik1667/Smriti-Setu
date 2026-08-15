@@ -24,10 +24,18 @@ async function generateWithFailover({ prompt, parts = [], overrideKey = null, ge
     throw new Error('No valid GEMINI_API_KEY configured in backend/.env.');
   }
 
+  const customModel = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL.trim()] : [];
   const candidateModels = [
+    ...customModel,
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
     'gemini-3.5-flash',
-    'gemini-3.5-flash-lite'
+    'gemini-3.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite'
   ];
+  // Deduplicate in case customModel matches one of the defaults
+  const uniqueModels = [...new Set(candidateModels)];
 
   let lastError = null;
 
@@ -37,7 +45,7 @@ async function generateWithFailover({ prompt, parts = [], overrideKey = null, ge
     const genAI = new GoogleGenerativeAI(currentKey);
 
     // Model Loop: Tries available candidate models on this key
-    for (const modelName of candidateModels) {
+    for (const modelName of uniqueModels) {
       try {
         const model = genAI.getGenerativeModel({
           model: modelName,
