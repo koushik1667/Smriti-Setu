@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { getHistory, deleteHistoryItem } = require('../controllers/historyController');
-const { verifyToken } = require('../middleware/auth');
+const { optionalAuth } = require('../middleware/auth');
 
-router.get('/history', verifyToken, getHistory);
-router.delete('/history/:id', verifyToken, deleteHistoryItem);
+router.get('/history', optionalAuth, getHistory);
+router.delete('/history/:id', optionalAuth, deleteHistoryItem);
 
 module.exports = router;

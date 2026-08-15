@@ -300,6 +300,7 @@ export function classifyMedication(med) {
  */
 export function groupMedicationsByDisease(medications = [], lang = 'en') {
   const groups = {};
+  const validList = Array.isArray(medications) ? medications.filter(Boolean) : [];
 
   Object.keys(DISEASE_CATEGORIES).forEach(key => {
     groups[key] = {
@@ -308,9 +309,18 @@ export function groupMedicationsByDisease(medications = [], lang = 'en') {
     };
   });
 
-  medications.forEach(med => {
-    const cat = classifyMedication(med);
-    groups[cat.id].items.push(med);
+  validList.forEach(med => {
+    try {
+      const cat = classifyMedication(med);
+      const targetId = (cat && cat.id && groups[cat.id]) ? cat.id : 'general';
+      if (groups[targetId]) {
+        groups[targetId].items.push(med);
+      }
+    } catch (e) {
+      if (groups.general) {
+        groups.general.items.push(med);
+      }
+    }
   });
 
   const populatedGroups = Object.values(groups).filter(g => g.items.length > 0);
@@ -318,6 +328,6 @@ export function groupMedicationsByDisease(medications = [], lang = 'en') {
   return {
     allGroups: groups,
     populatedGroups,
-    totalMedications: medications.length
+    totalMedications: validList.length
   };
 }

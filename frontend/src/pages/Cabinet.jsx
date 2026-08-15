@@ -22,16 +22,22 @@ export const Cabinet = () => {
   const [speakingId, setSpeakingId] = useState(null);
   const [notificationStatus, setNotificationStatus] = useState('');
 
-  const fetchCabinet = () => {
+  const fetchCabinet = (forceRefresh = false) => {
     setLoading(true);
-    api.getHistory()
-      .then(res => setHistory(res.history || []))
-      .catch(() => {})
+    api.getHistory(forceRefresh)
+      .then(res => {
+        const items = Array.isArray(res) ? res : (res?.history || res?.data || []);
+        setHistory(items);
+      })
+      .catch(err => {
+        console.warn('[Cabinet] Failed to fetch history:', err);
+        setHistory([]);
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchCabinet();
+    fetchCabinet(true);
   }, []);
 
   const handleDelete = async (id, e) => {
@@ -125,7 +131,7 @@ export const Cabinet = () => {
           >
             <FileDown size={16} /> Export PDF
           </button>
-          <button className="btn-secondary" onClick={fetchCabinet} style={{ gap: '6px' }}>
+          <button className="btn-secondary" onClick={() => fetchCabinet(true)} style={{ gap: '6px' }}>
             <RefreshCw size={16} /> Refresh
           </button>
           <button className="btn-primary" onClick={() => navigate('/scanner')} style={{ gap: '6px' }}>

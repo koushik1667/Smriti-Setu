@@ -119,8 +119,8 @@ if (express) {
     { method: 'POST', path: '/api/vision/chat', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/visionController').chatWithMedicineAI },
     { method: 'POST', path: '/api/chat', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/visionController').chatWithMedicineAI },
 
-    { method: 'GET', path: '/api/history', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/historyController').getHistory },
-    { method: 'DELETE', path: '/api/history/:id', middleware: require('./middleware/auth').verifyToken, handler: require('./controllers/historyController').deleteHistoryItem }
+    { method: 'GET', path: '/api/history', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/historyController').getHistory },
+    { method: 'DELETE', path: '/api/history/:id', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/historyController').deleteHistoryItem }
   ];
 
   app = (req, res) => {

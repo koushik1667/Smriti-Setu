@@ -2,7 +2,7 @@ const ScanHistory = require('../models/ScanHistory');
 
 async function getHistory(req, res, next) {
   try {
-    const userId = req.user.id;
+    const userId = req.user ? req.user.id : 'anonymous';
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
     const history = await ScanHistory.findByUserId(userId, limit);
 
@@ -19,7 +19,7 @@ async function getHistory(req, res, next) {
 async function deleteHistoryItem(req, res, next) {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user ? req.user.id : 'anonymous';
 
     const deleted = await ScanHistory.deleteById(id, userId);
     if (!deleted) {
