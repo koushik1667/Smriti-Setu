@@ -5,7 +5,8 @@ import { useLanguage } from '../context/LanguageContext';
 import {
   Pill, Search, Package, Plus, ChevronRight, Trash2,
   Activity, ShieldAlert, Sparkles, Filter, CheckCircle, RefreshCw, Volume2, FileDown,
-  Sun, Moon, Sunrise, Clock, Bell, BellRing, Calendar, Settings, RotateCcw, Check, Edit3
+  Sun, Moon, Sunrise, Clock, Bell, BellRing, Calendar, Settings, RotateCcw, Check, Edit3,
+  GripVertical, X, Sparkle, ArrowRightLeft, Move
 } from 'lucide-react';
 import {
   DISEASE_CATEGORIES,
@@ -77,6 +78,20 @@ export const Cabinet = () => {
   const [notificationStatus, setNotificationStatus] = useState('');
   const [showAlarmConfig, setShowAlarmConfig] = useState(false);
 
+  // Drag & Drop State
+  const [draggedMedId, setDraggedMedId] = useState(null);
+  const [dragOverRoutine, setDragOverRoutine] = useState(null);
+
+  // Persistent Schedule Overrides
+  const [scheduleOverrides, setScheduleOverrides] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pharmavision_schedule_overrides');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [alarmTimes, setAlarmTimes] = useState(() => {
     try {
       const saved = localStorage.getItem('pharmavision_alarm_timings');
@@ -98,6 +113,73 @@ export const Cabinet = () => {
     setAlarmTimes(DEFAULT_ALARM_TIMES);
     try {
       localStorage.setItem('pharmavision_alarm_timings', JSON.stringify(DEFAULT_ALARM_TIMES));
+    } catch {}
+  };
+
+  // Schedule Routine Extraction & Manipulation
+  function getDefaultRoutines(item) {
+    if (!item) return [];
+    const text = `${item.dosageInstructions || ''} ${item.rawAnalysis || ''}`.toLowerCase();
+    const routines = [];
+    if (text.includes('morning') || text.includes('1-0-1') || text.includes('1-0-0') || text.includes('1-1-1') || text.includes('breakfast') || text.includes(' od') || text.includes('daily')) {
+      routines.push('morning');
+    }
+    if (text.includes('afternoon') || text.includes('lunch') || text.includes('1-1-1') || text.includes('0-1-0') || text.includes('tds') || text.includes('qid')) {
+      routines.push('afternoon');
+    }
+    if (text.includes('night') || text.includes('bedtime') || text.includes('dinner') || text.includes('1-0-1') || text.includes('0-0-1') || text.includes('1-1-1') || text.includes(' bd') || text.includes('hs')) {
+      routines.push('night');
+    }
+    if (routines.length === 0) {
+      routines.push('morning');
+    }
+    return routines;
+  }
+
+  function getMedRoutines(item) {
+    if (!item) return [];
+    if (scheduleOverrides[item.id]) {
+      return scheduleOverrides[item.id];
+    }
+    return getDefaultRoutines(item);
+  }
+
+  const handleMoveMedication = (medId, targetRoutine) => {
+    const med = history.find(m => m.id === medId) || { id: medId };
+    const current = getMedRoutines(med);
+    const updatedRoutines = Array.from(new Set([...current, targetRoutine]));
+    const updated = { ...scheduleOverrides, [medId]: updatedRoutines };
+    setScheduleOverrides(updated);
+    try {
+      localStorage.setItem('pharmavision_schedule_overrides', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleRemoveFromRoutine = (medId, routineToRemove, e) => {
+    if (e) e.stopPropagation();
+    const med = history.find(m => m.id === medId) || { id: medId };
+    const current = getMedRoutines(med);
+    const updatedRoutines = current.filter(r => r !== routineToRemove);
+    const updated = { ...scheduleOverrides, [medId]: updatedRoutines };
+    setScheduleOverrides(updated);
+    try {
+      localStorage.setItem('pharmavision_schedule_overrides', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleAssignOnlyRoutine = (medId, onlyRoutine, e) => {
+    if (e) e.stopPropagation();
+    const updated = { ...scheduleOverrides, [medId]: [onlyRoutine] };
+    setScheduleOverrides(updated);
+    try {
+      localStorage.setItem('pharmavision_schedule_overrides', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleResetScheduleOverrides = () => {
+    setScheduleOverrides({});
+    try {
+      localStorage.removeItem('pharmavision_schedule_overrides');
     } catch {}
   };
 
@@ -154,21 +236,10 @@ export const Cabinet = () => {
   // Regroup filtered items by disease for shelf view
   const { populatedGroups: displayShelves } = groupMedicationsByDisease(filteredHistory, lang);
 
-  // Daily Schedule Extraction
-  const morningMeds = history.filter(item => {
-    const text = `${item.dosageInstructions || ''} ${item.rawAnalysis || ''}`.toLowerCase();
-    return text.includes('morning') || text.includes('1-0-1') || text.includes('1-0-0') || text.includes('1-1-1') || text.includes('breakfast') || text.includes(' od') || text.includes('daily');
-  });
-
-  const afternoonMeds = history.filter(item => {
-    const text = `${item.dosageInstructions || ''} ${item.rawAnalysis || ''}`.toLowerCase();
-    return text.includes('afternoon') || text.includes('lunch') || text.includes('1-1-1') || text.includes('0-1-0') || text.includes('tds') || text.includes('qid');
-  });
-
-  const nightMeds = history.filter(item => {
-    const text = `${item.dosageInstructions || ''} ${item.rawAnalysis || ''}`.toLowerCase();
-    return text.includes('night') || text.includes('bedtime') || text.includes('dinner') || text.includes('1-0-1') || text.includes('0-0-1') || text.includes('1-1-1') || text.includes(' bd') || text.includes('hs');
-  });
+  // Daily Schedule Extraction with Custom Overrides
+  const morningMeds = history.filter(item => getMedRoutines(item).includes('morning'));
+  const afternoonMeds = history.filter(item => getMedRoutines(item).includes('afternoon'));
+  const nightMeds = history.filter(item => getMedRoutines(item).includes('night'));
 
   // Live background ticker for alarms
   useEffect(() => {
@@ -440,10 +511,53 @@ export const Cabinet = () => {
             </div>
           )}
 
+          {/* Drag & Drop Guidance Banner */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', padding: '12px 18px', background: 'var(--md-sys-color-surface-container-low)', borderRadius: 'var(--r-md)', border: '1px dashed var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.86rem', color: 'var(--md-sys-color-on-surface)' }}>
+              <Move size={16} color="var(--md-sys-color-primary)" />
+              <span>
+                <strong>Drag & Drop Enabled:</strong> Drag any medicine card between <strong>Morning</strong>, <strong>Afternoon</strong>, and <strong>Night</strong> slots to customize your daily schedule.
+              </span>
+            </div>
+
+            <button
+              className="btn-secondary"
+              onClick={handleResetScheduleOverrides}
+              style={{ fontSize: '0.78rem', padding: '4px 12px', gap: '4px' }}
+              title="Re-align with original doctor dosage label instructions"
+            >
+              <RotateCcw size={13} /> Reset to Prescription Defaults
+            </button>
+          </div>
+
           {/* Schedule 3-Column Routine Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-            {/* Morning Dose */}
-            <div className="card" style={{ padding: '20px', borderTop: '4px solid #f59e0b' }}>
+            {/* Morning Dose Slot */}
+            <div
+              className="card"
+              onDragOver={e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverRoutine !== 'morning') setDragOverRoutine('morning');
+              }}
+              onDragLeave={() => {
+                if (dragOverRoutine === 'morning') setDragOverRoutine(null);
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                setDragOverRoutine(null);
+                const medId = e.dataTransfer.getData('text/plain') || draggedMedId;
+                if (medId) handleMoveMedication(medId, 'morning');
+              }}
+              style={{
+                padding: '20px',
+                borderTop: '4px solid #f59e0b',
+                border: dragOverRoutine === 'morning' ? '2px dashed #f59e0b' : undefined,
+                background: dragOverRoutine === 'morning' ? 'rgba(245, 158, 11, 0.08)' : undefined,
+                transition: 'all 0.2s ease',
+                minHeight: '260px'
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Sunrise size={22} color="#f59e0b" />
@@ -462,21 +576,100 @@ export const Cabinet = () => {
               </div>
 
               {morningMeds.length === 0 ? (
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No morning medications scheduled.</p>
+                <div style={{ padding: '30px 16px', textAlign: 'center', border: '2px dashed var(--border)', borderRadius: 'var(--r-md)', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.85rem', margin: 0 }}>Drop medications here for Morning routine</p>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {morningMeds.map(med => (
-                    <div key={med.id} onClick={() => navigate(`/scan/${med.id}`)} style={{ padding: '12px', background: 'var(--md-sys-color-surface-container-low)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--md-sys-color-on-surface)' }}>{med.medicationName}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>{med.dosageInstructions || 'Take 1 dose after breakfast'}</div>
+                    <div
+                      key={med.id}
+                      draggable={true}
+                      onDragStart={e => {
+                        e.dataTransfer.setData('text/plain', med.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedMedId(med.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedMedId(null);
+                        setDragOverRoutine(null);
+                      }}
+                      style={{
+                        padding: '12px 14px',
+                        background: draggedMedId === med.id ? 'rgba(0,0,0,0.03)' : 'var(--md-sys-color-surface-container-low)',
+                        opacity: draggedMedId === med.id ? 0.4 : 1,
+                        borderRadius: 'var(--r-md)',
+                        border: '1px solid var(--border)',
+                        cursor: 'grab',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <GripVertical size={16} color="var(--text-muted)" style={{ opacity: 0.6 }} />
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--md-sys-color-on-surface)' }}>{med.medicationName}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{med.dosageInstructions || 'Take 1 dose after breakfast'}</div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={e => handleRemoveFromRoutine(med.id, 'morning', e)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                          title="Remove from Morning routine"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+
+                      {/* Quick Move Shortcut Pills */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--border)', fontSize: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Move:</span>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleMoveMedication(med.id, 'afternoon'); }}
+                          style={{ padding: '2px 8px', borderRadius: 'var(--r-full)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface)', color: '#3b82f6', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
+                        >
+                          ☀️ Afternoon
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleMoveMedication(med.id, 'night'); }}
+                          style={{ padding: '2px 8px', borderRadius: 'var(--r-full)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface)', color: '#8b5cf6', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
+                        >
+                          🌙 Night
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Afternoon Dose */}
-            <div className="card" style={{ padding: '20px', borderTop: '4px solid #3b82f6' }}>
+            {/* Afternoon Dose Slot */}
+            <div
+              className="card"
+              onDragOver={e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverRoutine !== 'afternoon') setDragOverRoutine('afternoon');
+              }}
+              onDragLeave={() => {
+                if (dragOverRoutine === 'afternoon') setDragOverRoutine(null);
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                setDragOverRoutine(null);
+                const medId = e.dataTransfer.getData('text/plain') || draggedMedId;
+                if (medId) handleMoveMedication(medId, 'afternoon');
+              }}
+              style={{
+                padding: '20px',
+                borderTop: '4px solid #3b82f6',
+                border: dragOverRoutine === 'afternoon' ? '2px dashed #3b82f6' : undefined,
+                background: dragOverRoutine === 'afternoon' ? 'rgba(59, 130, 246, 0.08)' : undefined,
+                transition: 'all 0.2s ease',
+                minHeight: '260px'
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Sun size={22} color="#3b82f6" />
@@ -495,21 +688,100 @@ export const Cabinet = () => {
               </div>
 
               {afternoonMeds.length === 0 ? (
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No afternoon medications scheduled.</p>
+                <div style={{ padding: '30px 16px', textAlign: 'center', border: '2px dashed var(--border)', borderRadius: 'var(--r-md)', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.85rem', margin: 0 }}>Drop medications here for Afternoon routine</p>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {afternoonMeds.map(med => (
-                    <div key={med.id} onClick={() => navigate(`/scan/${med.id}`)} style={{ padding: '12px', background: 'var(--md-sys-color-surface-container-low)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--md-sys-color-on-surface)' }}>{med.medicationName}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>{med.dosageInstructions || 'Take 1 dose after lunch'}</div>
+                    <div
+                      key={med.id}
+                      draggable={true}
+                      onDragStart={e => {
+                        e.dataTransfer.setData('text/plain', med.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedMedId(med.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedMedId(null);
+                        setDragOverRoutine(null);
+                      }}
+                      style={{
+                        padding: '12px 14px',
+                        background: draggedMedId === med.id ? 'rgba(0,0,0,0.03)' : 'var(--md-sys-color-surface-container-low)',
+                        opacity: draggedMedId === med.id ? 0.4 : 1,
+                        borderRadius: 'var(--r-md)',
+                        border: '1px solid var(--border)',
+                        cursor: 'grab',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <GripVertical size={16} color="var(--text-muted)" style={{ opacity: 0.6 }} />
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--md-sys-color-on-surface)' }}>{med.medicationName}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{med.dosageInstructions || 'Take 1 dose after lunch'}</div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={e => handleRemoveFromRoutine(med.id, 'afternoon', e)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                          title="Remove from Afternoon routine"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+
+                      {/* Quick Move Shortcut Pills */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--border)', fontSize: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Move:</span>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleMoveMedication(med.id, 'morning'); }}
+                          style={{ padding: '2px 8px', borderRadius: 'var(--r-full)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
+                        >
+                          🌅 Morning
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleMoveMedication(med.id, 'night'); }}
+                          style={{ padding: '2px 8px', borderRadius: 'var(--r-full)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface)', color: '#8b5cf6', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
+                        >
+                          🌙 Night
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Night Dose */}
-            <div className="card" style={{ padding: '20px', borderTop: '4px solid #8b5cf6' }}>
+            {/* Night Dose Slot */}
+            <div
+              className="card"
+              onDragOver={e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverRoutine !== 'night') setDragOverRoutine('night');
+              }}
+              onDragLeave={() => {
+                if (dragOverRoutine === 'night') setDragOverRoutine(null);
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                setDragOverRoutine(null);
+                const medId = e.dataTransfer.getData('text/plain') || draggedMedId;
+                if (medId) handleMoveMedication(medId, 'night');
+              }}
+              style={{
+                padding: '20px',
+                borderTop: '4px solid #8b5cf6',
+                border: dragOverRoutine === 'night' ? '2px dashed #8b5cf6' : undefined,
+                background: dragOverRoutine === 'night' ? 'rgba(139, 92, 246, 0.08)' : undefined,
+                transition: 'all 0.2s ease',
+                minHeight: '260px'
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Moon size={22} color="#8b5cf6" />
@@ -528,19 +800,152 @@ export const Cabinet = () => {
               </div>
 
               {nightMeds.length === 0 ? (
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No night medications scheduled.</p>
+                <div style={{ padding: '30px 16px', textAlign: 'center', border: '2px dashed var(--border)', borderRadius: 'var(--r-md)', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.85rem', margin: 0 }}>Drop medications here for Night routine</p>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {nightMeds.map(med => (
-                    <div key={med.id} onClick={() => navigate(`/scan/${med.id}`)} style={{ padding: '12px', background: 'var(--md-sys-color-surface-container-low)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--md-sys-color-on-surface)' }}>{med.medicationName}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>{med.dosageInstructions || 'Take 1 dose after dinner'}</div>
+                    <div
+                      key={med.id}
+                      draggable={true}
+                      onDragStart={e => {
+                        e.dataTransfer.setData('text/plain', med.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedMedId(med.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedMedId(null);
+                        setDragOverRoutine(null);
+                      }}
+                      style={{
+                        padding: '12px 14px',
+                        background: draggedMedId === med.id ? 'rgba(0,0,0,0.03)' : 'var(--md-sys-color-surface-container-low)',
+                        opacity: draggedMedId === med.id ? 0.4 : 1,
+                        borderRadius: 'var(--r-md)',
+                        border: '1px solid var(--border)',
+                        cursor: 'grab',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <GripVertical size={16} color="var(--text-muted)" style={{ opacity: 0.6 }} />
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--md-sys-color-on-surface)' }}>{med.medicationName}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{med.dosageInstructions || 'Take 1 dose after dinner'}</div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={e => handleRemoveFromRoutine(med.id, 'night', e)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                          title="Remove from Night routine"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+
+                      {/* Quick Move Shortcut Pills */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--border)', fontSize: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Move:</span>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleMoveMedication(med.id, 'morning'); }}
+                          style={{ padding: '2px 8px', borderRadius: 'var(--r-full)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface)', color: '#f59e0b', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
+                        >
+                          🌅 Morning
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleMoveMedication(med.id, 'afternoon'); }}
+                          style={{ padding: '2px 8px', borderRadius: 'var(--r-full)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface)', color: '#3b82f6', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
+                        >
+                          ☀️ Afternoon
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
           </div>
+
+          {/* All Cabinet Medications Quick Drag Tray */}
+          {history.length > 0 && (
+            <div className="card" style={{ padding: '20px', background: 'var(--md-sys-color-surface-container-low)', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Package size={18} color="var(--md-sys-color-primary)" />
+                  <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0 }}>
+                    Cabinet Medications Tray (Drag into Any Routine Above)
+                  </h4>
+                </div>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {history.length} medicines available in cabinet
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {history.map(med => {
+                  const assigned = getMedRoutines(med);
+                  return (
+                    <div
+                      key={med.id}
+                      draggable={true}
+                      onDragStart={e => {
+                        e.dataTransfer.setData('text/plain', med.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedMedId(med.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedMedId(null);
+                        setDragOverRoutine(null);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--r-full)',
+                        background: 'var(--md-sys-color-surface)',
+                        border: '1px solid var(--border)',
+                        cursor: 'grab',
+                        fontSize: '0.84rem',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <GripVertical size={14} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+                      <span style={{ fontWeight: 700, color: 'var(--md-sys-color-on-surface)' }}>{med.medicationName}</span>
+                      
+                      {/* Quick assignment pills */}
+                      <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                        <button
+                          onClick={() => handleMoveMedication(med.id, 'morning')}
+                          style={{ border: 'none', background: assigned.includes('morning') ? '#f59e0b' : 'rgba(0,0,0,0.05)', color: assigned.includes('morning') ? '#fff' : 'var(--text-muted)', borderRadius: 'var(--r-full)', padding: '2px 6px', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 700 }}
+                          title="Add to Morning Routine"
+                        >
+                          🌅 {assigned.includes('morning') ? '✓' : '+'}
+                        </button>
+                        <button
+                          onClick={() => handleMoveMedication(med.id, 'afternoon')}
+                          style={{ border: 'none', background: assigned.includes('afternoon') ? '#3b82f6' : 'rgba(0,0,0,0.05)', color: assigned.includes('afternoon') ? '#fff' : 'var(--text-muted)', borderRadius: 'var(--r-full)', padding: '2px 6px', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 700 }}
+                          title="Add to Afternoon Routine"
+                        >
+                          ☀️ {assigned.includes('afternoon') ? '✓' : '+'}
+                        </button>
+                        <button
+                          onClick={() => handleMoveMedication(med.id, 'night')}
+                          style={{ border: 'none', background: assigned.includes('night') ? '#8b5cf6' : 'rgba(0,0,0,0.05)', color: assigned.includes('night') ? '#fff' : 'var(--text-muted)', borderRadius: 'var(--r-full)', padding: '2px 6px', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 700 }}
+                          title="Add to Night Routine"
+                        >
+                          🌙 {assigned.includes('night') ? '✓' : '+'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* SHELVES CATEGORY VIEW */
