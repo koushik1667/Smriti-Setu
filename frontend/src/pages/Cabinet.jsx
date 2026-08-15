@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import {
   Pill, Search, Package, Plus, ChevronRight, Trash2,
   Activity, ShieldAlert, Sparkles, Filter, CheckCircle, RefreshCw, Volume2, FileDown,
-  Sun, Moon, Sunrise, Clock, Bell, BellRing, Calendar
+  Sun, Moon, Sunrise, Clock, Bell, BellRing, Calendar, Settings, RotateCcw, Check, Edit3
 } from 'lucide-react';
 import {
   DISEASE_CATEGORIES,
@@ -14,6 +14,56 @@ import {
 } from '../utils/diseaseClassifier';
 import { speakText } from '../utils/speechUtils';
 import { generateCabinetSummaryPDF } from '../utils/clinicalPdfExporter';
+
+const DEFAULT_ALARM_TIMES = {
+  morning: '08:00',
+  afternoon: '13:00',
+  night: '21:00'
+};
+
+function formatTime12h(timeStr) {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  h = h ? h : 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function playAlarmChime() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    
+    // Pleasant two-tone hospital/medical chime (880Hz -> 1046.5Hz)
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, now);
+    osc1.frequency.setValueAtTime(1046.5, now + 0.15);
+    gain1.gain.setValueAtTime(0.18, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.6);
+
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1318.5, now + 0.3);
+    gain2.gain.setValueAtTime(0.15, now + 0.3);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(now + 0.3);
+    osc2.stop(now + 0.9);
+  } catch (e) {
+    console.warn('AudioContext not allowed or supported', e);
+  }
+}
 
 export const Cabinet = () => {
   const navigate = useNavigate();
@@ -25,6 +75,31 @@ export const Cabinet = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [speakingId, setSpeakingId] = useState(null);
   const [notificationStatus, setNotificationStatus] = useState('');
+  const [showAlarmConfig, setShowAlarmConfig] = useState(false);
+
+  const [alarmTimes, setAlarmTimes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pharmavision_alarm_timings');
+      return saved ? JSON.parse(saved) : DEFAULT_ALARM_TIMES;
+    } catch {
+      return DEFAULT_ALARM_TIMES;
+    }
+  });
+
+  const handleUpdateAlarmTime = (routine, newTime) => {
+    const updated = { ...alarmTimes, [routine]: newTime };
+    setAlarmTimes(updated);
+    try {
+      localStorage.setItem('pharmavision_alarm_timings', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleResetAlarmTimes = () => {
+    setAlarmTimes(DEFAULT_ALARM_TIMES);
+    try {
+      localStorage.setItem('pharmavision_alarm_timings', JSON.stringify(DEFAULT_ALARM_TIMES));
+    } catch {}
+  };
 
   const fetchCabinet = (forceRefresh = false) => {
     setLoading(true);
@@ -95,6 +170,44 @@ export const Cabinet = () => {
     return text.includes('night') || text.includes('bedtime') || text.includes('dinner') || text.includes('1-0-1') || text.includes('0-0-1') || text.includes('1-1-1') || text.includes(' bd') || text.includes('hs');
   });
 
+  // Live background ticker for alarms
+  useEffect(() => {
+    let lastTriggeredMinute = '';
+    const interval = setInterval(() => {
+      const d = new Date();
+      const currentHHMM = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      
+      if (currentHHMM === lastTriggeredMinute) return;
+
+      let matchedRoutine = null;
+      let matchedMeds = [];
+
+      if (currentHHMM === alarmTimes.morning && morningMeds.length > 0) {
+        matchedRoutine = 'Morning Routine';
+        matchedMeds = morningMeds;
+      } else if (currentHHMM === alarmTimes.afternoon && afternoonMeds.length > 0) {
+        matchedRoutine = 'Afternoon Routine';
+        matchedMeds = afternoonMeds;
+      } else if (currentHHMM === alarmTimes.night && nightMeds.length > 0) {
+        matchedRoutine = 'Night Routine';
+        matchedMeds = nightMeds;
+      }
+
+      if (matchedRoutine) {
+        lastTriggeredMinute = currentHHMM;
+        playAlarmChime();
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(`⏰ Dose Reminder: ${matchedRoutine}`, {
+            body: `Time to take your scheduled medications: ${matchedMeds.map(m => m.medicationName).join(', ')}`,
+            icon: '/favicon.ico'
+          });
+        }
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [alarmTimes, morningMeds, afternoonMeds, nightMeds]);
+
   const handleEnableReminders = async () => {
     if (!('Notification' in window)) {
       setNotificationStatus('Browser notifications are not supported on this device.');
@@ -104,11 +217,12 @@ export const Cabinet = () => {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
+        playAlarmChime();
         new Notification('PharmaVision AI Pill Reminder Active', {
           body: `You have ${history.length} active medications scheduled in your daily tracker.`,
           icon: '/favicon.ico'
         });
-        setNotificationStatus('🎉 Daily dosage reminders enabled! You will receive timely alerts.');
+        setNotificationStatus('🎉 Daily dosage reminders enabled! You will receive timely alerts and chimes.');
       } else {
         setNotificationStatus('Notification permission was declined in browser settings.');
       }
@@ -201,19 +315,124 @@ export const Cabinet = () => {
                   Daily Pill Schedule & Dose Reminders
                 </h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--md-sys-color-on-primary-container)', margin: '4px 0 0 0', opacity: 0.9 }}>
-                  Automatic time-based routine mapping based on your doctor's prescriptions and label timings.
+                  Automatic time-based routine mapping. Alarms chime at your configured routine times.
                 </p>
               </div>
             </div>
 
-            <button
-              className="btn-primary"
-              onClick={handleEnableReminders}
-              style={{ background: 'var(--md-sys-color-primary)', color: 'var(--md-sys-color-on-primary)', gap: '8px' }}
-            >
-              <Bell size={16} /> Enable Dose Alarms
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowAlarmConfig(!showAlarmConfig)}
+                style={{ background: 'var(--md-sys-color-surface)', color: 'var(--md-sys-color-on-surface)', gap: '6px', fontSize: '0.85rem' }}
+              >
+                <Settings size={16} /> {showAlarmConfig ? 'Hide Settings' : '⚙️ Customise Timings'}
+              </button>
+              <button
+                className="btn-primary"
+                onClick={handleEnableReminders}
+                style={{ background: 'var(--md-sys-color-primary)', color: 'var(--md-sys-color-on-primary)', gap: '8px', fontSize: '0.85rem' }}
+              >
+                <Bell size={16} /> Enable Dose Alarms
+              </button>
+            </div>
           </div>
+
+          {/* Alarm Timings Customization Panel */}
+          {showAlarmConfig && (
+            <div className="card fade-in" style={{ padding: '24px', border: '2px solid var(--md-sys-color-primary)', background: 'var(--md-sys-color-surface-container-low)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0 }}>
+                    ⏰ Customise Alarm Timings
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                    Adjust when PharmaVision alerts you for each daily medication routine.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="btn-secondary"
+                    onClick={playAlarmChime}
+                    style={{ gap: '6px', fontSize: '0.82rem' }}
+                    title="Play medical reminder sound preview"
+                  >
+                    <Volume2 size={15} /> 🔊 Test Chime
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={handleResetAlarmTimes}
+                    style={{ gap: '6px', fontSize: '0.82rem' }}
+                    title="Reset to default timings (8 AM, 1 PM, 9 PM)"
+                  >
+                    <RotateCcw size={15} /> Reset Defaults
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={() => setShowAlarmConfig(false)}
+                    style={{ gap: '6px', fontSize: '0.82rem' }}
+                  >
+                    <Check size={15} /> Done
+                  </button>
+                </div>
+              </div>
+
+              {/* 3 Alarm Time Pickers */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+                {/* Morning Time Picker */}
+                <div style={{ padding: '16px', borderRadius: 'var(--r-md)', background: 'var(--md-sys-color-surface)', border: '1px solid #f59e0b' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <Sunrise size={20} color="#f59e0b" />
+                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--md-sys-color-on-surface)' }}>Morning Alarm</span>
+                  </div>
+                  <input
+                    type="time"
+                    value={alarmTimes.morning}
+                    onChange={e => handleUpdateAlarmTime('morning', e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: '1.05rem', fontWeight: 700, borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface-container-low)', color: 'var(--md-sys-color-on-surface)', marginBottom: '8px' }}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Active: <strong>{formatTime12h(alarmTimes.morning)}</strong> (Breakfast)
+                  </div>
+                </div>
+
+                {/* Afternoon Time Picker */}
+                <div style={{ padding: '16px', borderRadius: 'var(--r-md)', background: 'var(--md-sys-color-surface)', border: '1px solid #3b82f6' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <Sun size={20} color="#3b82f6" />
+                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--md-sys-color-on-surface)' }}>Afternoon Alarm</span>
+                  </div>
+                  <input
+                    type="time"
+                    value={alarmTimes.afternoon}
+                    onChange={e => handleUpdateAlarmTime('afternoon', e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: '1.05rem', fontWeight: 700, borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface-container-low)', color: 'var(--md-sys-color-on-surface)', marginBottom: '8px' }}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Active: <strong>{formatTime12h(alarmTimes.afternoon)}</strong> (Lunch)
+                  </div>
+                </div>
+
+                {/* Night Time Picker */}
+                <div style={{ padding: '16px', borderRadius: 'var(--r-md)', background: 'var(--md-sys-color-surface)', border: '1px solid #8b5cf6' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <Moon size={20} color="#8b5cf6" />
+                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--md-sys-color-on-surface)' }}>Night Alarm</span>
+                  </div>
+                  <input
+                    type="time"
+                    value={alarmTimes.night}
+                    onChange={e => handleUpdateAlarmTime('night', e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: '1.05rem', fontWeight: 700, borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--md-sys-color-surface-container-low)', color: 'var(--md-sys-color-on-surface)', marginBottom: '8px' }}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Active: <strong>{formatTime12h(alarmTimes.night)}</strong> (Dinner / Bedtime)
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {notificationStatus && (
             <div style={{ padding: '12px 18px', borderRadius: 'var(--r-md)', background: 'var(--md-sys-color-surface-container-low)', border: '1px solid var(--border)', fontSize: '0.9rem', color: 'var(--md-sys-color-on-surface)' }}>
@@ -232,7 +451,14 @@ export const Cabinet = () => {
                     Morning Routine
                   </h3>
                 </div>
-                <span className="badge badge-amber">8:00 AM (Breakfast)</span>
+                <button
+                  onClick={() => setShowAlarmConfig(true)}
+                  className="badge badge-amber"
+                  style={{ cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  title="Click to edit morning timing"
+                >
+                  {formatTime12h(alarmTimes.morning)} (Breakfast) <Edit3 size={11} />
+                </button>
               </div>
 
               {morningMeds.length === 0 ? (
@@ -258,7 +484,14 @@ export const Cabinet = () => {
                     Afternoon Routine
                   </h3>
                 </div>
-                <span className="badge badge-cyan">1:00 PM (Lunch)</span>
+                <button
+                  onClick={() => setShowAlarmConfig(true)}
+                  className="badge badge-cyan"
+                  style={{ cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  title="Click to edit afternoon timing"
+                >
+                  {formatTime12h(alarmTimes.afternoon)} (Lunch) <Edit3 size={11} />
+                </button>
               </div>
 
               {afternoonMeds.length === 0 ? (
@@ -284,7 +517,14 @@ export const Cabinet = () => {
                     Night Routine
                   </h3>
                 </div>
-                <span className="badge badge-purple">9:00 PM (Dinner / Bedtime)</span>
+                <button
+                  onClick={() => setShowAlarmConfig(true)}
+                  className="badge badge-purple"
+                  style={{ cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  title="Click to edit night timing"
+                >
+                  {formatTime12h(alarmTimes.night)} (Dinner / Bedtime) <Edit3 size={11} />
+                </button>
               </div>
 
               {nightMeds.length === 0 ? (
