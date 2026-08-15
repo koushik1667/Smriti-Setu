@@ -1,3 +1,7 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Pill, Search, Package, Plus, ChevronRight, Trash2,
   Activity, ShieldAlert, Sparkles, Filter, CheckCircle, RefreshCw, Volume2, FileDown,
