@@ -40,8 +40,7 @@ async function request(endpoint, options = {}) {
   };
 
   const controller = new AbortController();
-  const timeoutMs = options.timeout || 9000;
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
 
   let response;
   try {
@@ -51,13 +50,13 @@ async function request(endpoint, options = {}) {
       signal: options.signal || controller.signal
     });
   } catch (netErr) {
-    clearTimeout(timer);
+    clearTimeout(timeoutId);
     if (netErr.name === 'AbortError') {
-      throw new Error('Network request timed out. Please check connection or try again.');
+      throw new Error('Connection to Smriti Setu server timed out. Please check your connection.');
     }
     throw netErr;
   } finally {
-    clearTimeout(timer);
+    clearTimeout(timeoutId);
   }
 
   const text = await response.text();

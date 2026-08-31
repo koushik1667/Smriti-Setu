@@ -9,36 +9,36 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
     const safetyTimer = setTimeout(() => {
-      if (isMounted) setLoading(false);
-    }, 4500);
+      if (active) setLoading(false);
+    }, 3500);
 
     async function initAuth() {
       if (!token) {
-        if (isMounted) setLoading(false);
+        if (active) setLoading(false);
         clearTimeout(safetyTimer);
         return;
       }
       try {
         const res = await api.getProfile();
-        if (isMounted) setUser(res.user);
+        if (active) setUser(res.user);
       } catch (err) {
         console.warn('Session expired or invalid token:', err.message);
         localStorage.removeItem('pharmavision_token');
-        if (isMounted) {
+        if (active) {
           setToken(null);
           setUser(null);
         }
       } finally {
         clearTimeout(safetyTimer);
-        if (isMounted) setLoading(false);
+        if (active) setLoading(false);
       }
     }
     initAuth();
 
     return () => {
-      isMounted = false;
+      active = false;
       clearTimeout(safetyTimer);
     };
   }, [token]);
