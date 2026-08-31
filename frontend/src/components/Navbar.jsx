@@ -1,9 +1,11 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Pill, LogOut, User, Activity } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
 
   return (
     <nav className="glass-panel" style={{ borderRadius: 0, borderTop: 0, borderLeft: 0, borderRight: 0, padding: '16px 24px', position: 'sticky', top: 0, zIndex: 50 }}>
@@ -16,9 +18,9 @@ export const Navbar = () => {
           </div>
           <div>
             <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.1 }}>
-              PharmaVision <span style={{ color: '#06b6d4' }}>AI</span>
+              {t('appName')}
             </h1>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>Visual Intelligence Medicine Scanner</p>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>{t('tagline')}</p>
           </div>
         </div>
 
@@ -32,7 +34,7 @@ export const Navbar = () => {
 
             <button onClick={logout} className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.875rem' }}>
               <LogOut size={16} />
-              <span>Logout</span>
+              <span>{t('logout')}</span>
             </button>
           </div>
         )}

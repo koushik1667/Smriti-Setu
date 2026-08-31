@@ -12,6 +12,7 @@ try {
 const authRoutes = require('./routes/authRoutes');
 const visionRoutes = require('./routes/visionRoutes');
 const historyRoutes = require('./routes/historyRoutes');
+const cognitiveRoutes = require('./routes/cognitiveRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 let app;
@@ -100,6 +101,7 @@ if (express) {
   app.use('/api/auth', authRoutes);
   app.use('/api', visionRoutes);
   app.use('/api', historyRoutes);
+  app.use('/api/cognitive', cognitiveRoutes);
   app.use(errorHandler);
 } else {
   // Built-in Lightweight HTTP Server Fallback (Zero External Dependencies Required)
@@ -120,7 +122,14 @@ if (express) {
     { method: 'POST', path: '/api/chat', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/visionController').chatWithMedicineAI },
 
     { method: 'GET', path: '/api/history', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/historyController').getHistory },
-    { method: 'DELETE', path: '/api/history/:id', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/historyController').deleteHistoryItem }
+    { method: 'DELETE', path: '/api/history/:id', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/historyController').deleteHistoryItem },
+    { method: 'POST', path: '/api/cognitive/sync', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/cognitiveController').batchSync },
+    { method: 'GET', path: '/api/cognitive/caregiver-analytics', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/cognitiveController').getCaregiverAnalytics },
+    { method: 'POST', path: '/api/translate', handler: require('./controllers/translationController').translateText },
+    { method: 'POST', path: '/api/voice-agent/chat', handler: require('./controllers/voiceAgentController').handleVoiceChat },
+    { method: 'GET', path: '/api/tts', handler: require('./controllers/ttsController').streamAudio },
+    { method: 'POST', path: '/api/therapy/chat', handler: require('./controllers/therapyController').handleTherapySession },
+    { method: 'GET', path: '/api/therapy/greeting', handler: require('./controllers/therapyController').getInitialGreeting }
   ];
 
   app = (req, res) => {

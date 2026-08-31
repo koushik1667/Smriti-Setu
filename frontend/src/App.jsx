@@ -16,6 +16,9 @@ import { Cabinet }        from './pages/Cabinet';
 import { History }        from './pages/History';
 import { ScanDetail }     from './pages/ScanDetail';
 import { Profile }        from './pages/Profile';
+import { CognitiveGamePage }    from './pages/CognitiveGamePage';
+import { MemoryAssistancePage } from './pages/MemoryAssistancePage';
+import { CaregiverDashboard }  from './pages/CaregiverDashboard';
 import { PrivacyPolicy }  from './pages/PrivacyPolicy';
 import { TermsOfService }  from './pages/TermsOfService';
 
@@ -49,13 +52,16 @@ export function App() {
             <Route path="/terms"   element={<AppLayout><TermsOfService /></AppLayout>} />
 
             {/* Protected — with sidebar */}
-            <Route path="/dashboard"       element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/scanner"         element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
-            <Route path="/report-analyzer" element={<ProtectedRoute><ReportAnalyzer /></ProtectedRoute>} />
-            <Route path="/cabinet"         element={<ProtectedRoute><Cabinet /></ProtectedRoute>} />
-            <Route path="/history"         element={<ProtectedRoute><History /></ProtectedRoute>} />
-            <Route path="/scan/:id"        element={<ProtectedRoute><ScanDetail /></ProtectedRoute>} />
-            <Route path="/profile"         element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/dashboard"            element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/cognitive-game"       element={<ProtectedRoute><CognitiveGamePage /></ProtectedRoute>} />
+            <Route path="/memory-assistance"    element={<ProtectedRoute><MemoryAssistancePage /></ProtectedRoute>} />
+            <Route path="/caregiver-dashboard"  element={<ProtectedRoute><CaregiverDashboard /></ProtectedRoute>} />
+            <Route path="/scanner"              element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
+            <Route path="/report-analyzer"      element={<ProtectedRoute><ReportAnalyzer /></ProtectedRoute>} />
+            <Route path="/cabinet"              element={<ProtectedRoute><Cabinet /></ProtectedRoute>} />
+            <Route path="/history"              element={<ProtectedRoute><History /></ProtectedRoute>} />
+            <Route path="/scan/:id"             element={<ProtectedRoute><ScanDetail /></ProtectedRoute>} />
+            <Route path="/profile"              element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
             {/* Default */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

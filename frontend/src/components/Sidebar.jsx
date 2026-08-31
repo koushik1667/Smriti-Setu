@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import {
-  LayoutDashboard, Camera, History, User, LogOut, Pill, FileText, Package
+  LayoutDashboard, Camera, History, User, LogOut, Pill, FileText, Package, Brain, Bell, Activity
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -14,12 +14,15 @@ export const Sidebar = () => {
   const navigate = useNavigate();
 
   const NAV_ITEMS = [
-    { to: '/dashboard',       icon: LayoutDashboard, label: t('home') },
-    { to: '/scanner',         icon: Camera,          label: t('scanner') },
-    { to: '/report-analyzer', icon: FileText,        label: t('reportsRx') },
-    { to: '/cabinet',         icon: Package,         label: t('cabinet') },
-    { to: '/history',         icon: History,         label: t('history') },
-    { to: '/profile',         icon: User,            label: t('profile') },
+    { to: '/dashboard',           icon: LayoutDashboard, label: t('home') },
+    { to: '/cognitive-game',      icon: Brain,           label: t('cognitiveGames') },
+    { to: '/memory-assistance',   icon: Bell,            label: t('memoryReminders') },
+    { to: '/caregiver-dashboard', icon: Activity,        label: t('caregiverAnalytics') },
+    { to: '/scanner',             icon: Camera,          label: t('scanner') },
+    { to: '/report-analyzer',     icon: FileText,        label: t('reportsRx') },
+    { to: '/cabinet',             icon: Package,         label: t('cabinet') },
+    { to: '/history',             icon: History,         label: t('history') },
+    { to: '/profile',             icon: User,            label: t('profile') },
   ];
 
   const handleLogout = () => {
