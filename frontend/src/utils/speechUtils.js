@@ -5,6 +5,8 @@
  * Seamlessly integrates /api/tts streaming fallback when OS lacks native regional voice packs.
  */
 
+import { getApiBaseUrl } from '../services/api';
+
 const LANG_CODE_MAP = {
   te: 'te-IN', // Telugu
   hi: 'hi-IN', // Hindi
@@ -172,7 +174,8 @@ export function playStreamAudio(text, lang = 'te', onEndCallback = null) {
     }
 
     const chunk = chunks[currentIndex++];
-    const url = `/api/tts?text=${encodeURIComponent(chunk)}&lang=${lang}`;
+    const apiBase = getApiBaseUrl();
+    const url = `${apiBase}/tts?text=${encodeURIComponent(chunk)}&lang=${lang}`;
     const audio = new Audio(url);
     activeAudioElement = audio;
 

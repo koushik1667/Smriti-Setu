@@ -1,4 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+export const getApiBaseUrl = () => {
+  const raw = import.meta.env.VITE_API_URL || '/api';
+  const clean = raw.trim().replace(/\/+$/, '');
+  if (clean.startsWith('http') && !clean.endsWith('/api')) {
+    return `${clean}/api`;
+  }
+  return clean;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 function getAuthHeader() {
   const token = localStorage.getItem('pharmavision_token') || localStorage.getItem('token');
