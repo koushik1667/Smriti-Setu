@@ -5,11 +5,13 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import {
   Camera, Clock, Pill, ChevronRight, Scan, Package, FileText,
-  ShieldCheck, Sparkles, Activity, Layers, Stethoscope, ArrowRight, Brain, Bell, Heart, Mic, Flower2
+  ShieldCheck, Sparkles, Activity, Layers, Stethoscope, ArrowRight, Brain, Bell, Heart, Mic, Flower2,
+  RefreshCw, Wifi, WifiOff
 } from 'lucide-react';
 import { getUserMedicalProfile } from '../utils/allergenShield';
 import { LiveVoiceAgentModal } from '../components/voice/LiveVoiceAgentModal';
 import { VoiceTherapistRoom } from '../components/voice/VoiceTherapistRoom';
+import { syncManager } from '../services/syncManager';
 
 export const Dashboard = () => {
   const { user } = useAuth();
@@ -19,6 +21,19 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [voiceAgentOpen, setVoiceAgentOpen] = useState(false);
   const [isTherapistRoomOpen, setIsTherapistRoomOpen] = useState(false);
+  const [syncState, setSyncState] = useState({ isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true, isSyncing: false });
+  const [syncSuccessMsg, setSyncSuccessMsg] = useState('');
+
+  useEffect(() => {
+    const unsub = syncManager.subscribe(setSyncState);
+    return () => unsub();
+  }, []);
+
+  const handleSyncTelemetry = async () => {
+    const res = await syncManager.triggerBatchSync();
+    setSyncSuccessMsg(res?.message || 'Telemetry Synced!');
+    setTimeout(() => setSyncSuccessMsg(''), 3500);
+  };
 
   useEffect(() => {
     api.getHistory()
@@ -80,6 +95,85 @@ export const Dashboard = () => {
             {allergies.length > 0 ? 'Auto-conflict radar active' : 'Configured in Profile'}
           </div>
         </div>
+      </div>
+
+      {/* ─── Sync & Offline Telemetry Status Card ────────────────────────── */}
+      <div
+        className="card"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          padding: '16px 20px',
+          borderRadius: '20px',
+          background: 'linear-gradient(135deg, rgba(103, 80, 164, 0.08) 0%, rgba(30, 126, 52, 0.08) 100%)',
+          border: '2px solid rgba(103, 80, 164, 0.25)',
+          marginBottom: '26px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '14px',
+              backgroundColor: syncState.isOnline ? '#D1E7DD' : '#FEF3C7',
+              color: syncState.isOnline ? '#0F5132' : '#B45309',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            {syncState.isOnline ? <Wifi size={22} /> : <WifiOff size={22} />}
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong style={{ fontSize: '0.98rem', color: 'var(--md-sys-color-on-surface)' }}>
+                {syncState.isOnline ? 'Cloud Telemetry Active' : 'Local Offline Store'}
+              </strong>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  backgroundColor: syncState.isOnline ? '#0F5132' : '#B45309',
+                  color: '#FFFFFF',
+                  fontWeight: 800
+                }}
+              >
+                {syncState.isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+            <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--md-sys-color-on-surface-variant)' }}>
+              {syncSuccessMsg || 'Automatic store-and-forward telemetry to Caregiver Hub'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSyncTelemetry}
+          disabled={syncState.isSyncing}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 18px',
+            borderRadius: '14px',
+            backgroundColor: '#6750A4',
+            color: '#FFFFFF',
+            border: 'none',
+            fontWeight: 800,
+            fontSize: '0.88rem',
+            cursor: syncState.isSyncing ? 'wait' : 'pointer',
+            boxShadow: '0 2px 10px rgba(103, 80, 164, 0.35)'
+          }}
+        >
+          <RefreshCw size={16} className={syncState.isSyncing ? 'spin' : ''} />
+          <span>{syncState.isSyncing ? 'Syncing...' : 'Sync Telemetry'}</span>
+        </button>
       </div>
 
       {/* ─── 3 Core Clinical Action Cards ───────────────────────────── */}

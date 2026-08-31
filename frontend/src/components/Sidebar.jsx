@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import {
-  LayoutDashboard, Camera, History, User, LogOut, Pill, FileText, Package, Brain, Bell, Activity
+  LayoutDashboard, Camera, History, User, LogOut, Pill, FileText, Package, Brain, Bell, Activity, Menu, X
 } from 'lucide-react';
 
 export const Sidebar = () => {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const NAV_ITEMS = [
     { to: '/dashboard',           icon: LayoutDashboard, label: t('home') },
@@ -90,14 +91,23 @@ export const Sidebar = () => {
 
       {/* MOBILE TOP HEADER BAR */}
       <header className="mobile-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => navigate('/dashboard')} role="button">
-          <div className="sidebar-logo" style={{ width: '32px', height: '32px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(103, 80, 164, 0.4)' }}>
-            <Pill size={15} color="#fff" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0, letterSpacing: '-0.02em' }}>
-              {t('appName')}
-            </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={() => setDrawerOpen(!drawerOpen)}
+            aria-label="Open Navigation Menu"
+            style={{ background: 'transparent', border: 'none', color: 'var(--md-sys-color-on-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+          >
+            <Menu size={22} />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => navigate('/dashboard')} role="button">
+            <div className="sidebar-logo" style={{ width: '32px', height: '32px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(103, 80, 164, 0.4)' }}>
+              <Pill size={15} color="#fff" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0, letterSpacing: '-0.02em' }}>
+                {t('appName')}
+              </h2>
+            </div>
           </div>
         </div>
 
@@ -129,9 +139,48 @@ export const Sidebar = () => {
         </div>
       </header>
 
+      {/* MOBILE SLIDING NAVIGATION DRAWER OVERLAY */}
+      {drawerOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, backgroundColor: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(6px)', display: 'flex' }}
+          onClick={() => setDrawerOpen(false)}
+        >
+          <div
+            style={{ width: '82%', maxWidth: '320px', height: '100%', backgroundColor: 'var(--md-sys-color-surface)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '4px 0 24px rgba(0,0,0,0.3)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 18px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="sidebar-logo" style={{ width: '32px', height: '32px', borderRadius: '10px' }}><Pill size={16} color="#fff" /></div>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)' }}>{t('appName')}</h3>
+                </div>
+                <button onClick={() => setDrawerOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--md-sys-color-on-surface)', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
+              <nav style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+                  <NavLink key={to} to={to} onClick={() => setDrawerOpen(false)} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} style={{ padding: '10px 14px', borderRadius: '12px' }}>
+                    <span className="nav-icon"><Icon size={18} /></span>
+                    <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{label}</span>
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+            <div style={{ padding: '16px 18px', borderTop: '1px solid var(--border)' }}>
+              <button className="nav-link" onClick={() => { setDrawerOpen(false); handleLogout(); }} style={{ color: 'var(--md-sys-color-error)', width: '100%', justifyContent: 'flex-start' }}>
+                <span className="nav-icon"><LogOut size={18} /></span>
+                <span style={{ fontWeight: 700 }}>{t('logout')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MOBILE BOTTOM FLOATING NAVIGATION BAR */}
       <nav className="mobile-bottom-nav">
-        {NAV_ITEMS.slice(0, 5).map(({ to, icon: Icon, label }) => (
+        {NAV_ITEMS.slice(0, 4).map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -141,6 +190,10 @@ export const Sidebar = () => {
             <span>{label}</span>
           </NavLink>
         ))}
+        <button onClick={() => setDrawerOpen(true)} className="mobile-nav-item" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+          <Menu size={20} />
+          <span>More</span>
+        </button>
       </nav>
     </>
   );
