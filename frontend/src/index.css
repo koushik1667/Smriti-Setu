@@ -1148,4 +1148,106 @@ body {
   display: none !important;
 }
 
+/* ─────────────────────────────────────────────────────────── */
+/* Mobile-First Voice Widgets & Floating Actions System      */
+/* ─────────────────────────────────────────────────────────── */
+.voice-command-bar-container {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 40px);
+}
+
+.voice-command-feedback-pill {
+  position: fixed;
+  top: 78px;
+  right: 24px;
+  z-index: 9989;
+  max-width: 360px;
+}
+
+.floating-voice-agents-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9990;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  /* Voice Command Bar: Sits cleanly below the 60px mobile header without obscuring user profile/title */
+  .voice-command-bar-container {
+    top: 68px !important;
+    right: 12px !important;
+    gap: 6px !important;
+  }
+
+  .voice-command-toggle-btn {
+    min-height: 38px !important;
+    padding: 4px 12px !important;
+    border-radius: 19px !important;
+    gap: 6px !important;
+    font-size: 0.78rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .voice-command-icon-box {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 12px !important;
+  }
+
+  .voice-command-subtext {
+    display: none !important;
+  }
+
+  .voice-command-help-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 18px !important;
+  }
+
+  .voice-command-feedback-pill {
+    top: 114px !important;
+    right: 12px !important;
+    left: 12px !important;
+    max-width: calc(100vw - 24px) !important;
+    font-size: 0.82rem !important;
+    padding: 8px 14px !important;
+  }
+
+  /* Floating Voice Agent Button: Floats safely ABOVE the 68px bottom dock navigation */
+  .floating-voice-agents-container {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 12px) !important;
+    right: 12px !important;
+    gap: 8px !important;
+  }
+
+  .floating-voice-btn {
+    min-height: 40px !important;
+    padding: 0 14px !important;
+    font-size: 0.82rem !important;
+    border-radius: 20px !important;
+    box-shadow: 0 4px 16px rgba(103, 80, 164, 0.35) !important;
+  }
+
+  .floating-voice-btn-icon {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Page content padding: Extra scroll cushion so bottom content is never obscured */
+  .page-content {
+    padding-bottom: 160px !important;
+  }
+}
+
 

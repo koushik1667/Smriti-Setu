@@ -28,6 +28,7 @@ export const FloatingVoiceAgentButton = () => {
   return (
     <>
       <div
+        className="floating-voice-agents-container"
         style={{
           position: 'fixed',
           bottom: '24px',
@@ -42,9 +43,10 @@ export const FloatingVoiceAgentButton = () => {
         {/* Button 1: Fine-Tuned Voice-to-Voice Therapist */}
         <button
           onClick={() => setIsTherapistOpen(true)}
+          className="floating-voice-btn"
           aria-label="Open Voice-to-Voice Geriatric Therapist"
           style={{
-            minHeight: '52px',
+            minHeight: '50px',
             padding: '0 18px',
             borderRadius: '26px',
             backgroundColor: '#7E57C2',
@@ -56,7 +58,7 @@ export const FloatingVoiceAgentButton = () => {
             gap: '8px',
             cursor: 'pointer',
             fontWeight: 800,
-            fontSize: '0.98rem',
+            fontSize: '0.96rem',
             transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
             userSelect: 'none'
           }}
@@ -68,6 +70,7 @@ export const FloatingVoiceAgentButton = () => {
           }}
         >
           <div
+            className="floating-voice-btn-icon"
             style={{
               width: '28px',
               height: '28px',
@@ -86,9 +89,10 @@ export const FloatingVoiceAgentButton = () => {
         {/* Button 2: Live Voice Agent */}
         <button
           onClick={() => setIsAgentOpen(true)}
+          className="floating-voice-btn"
           aria-label="Open Live Multilingual Voice Agent"
           style={{
-            minHeight: '52px',
+            minHeight: '50px',
             padding: '0 18px',
             borderRadius: '26px',
             backgroundColor: '#6750A4',
@@ -100,7 +104,7 @@ export const FloatingVoiceAgentButton = () => {
             gap: '8px',
             cursor: 'pointer',
             fontWeight: 800,
-            fontSize: '0.98rem',
+            fontSize: '0.96rem',
             transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
             userSelect: 'none'
           }}
@@ -112,6 +116,7 @@ export const FloatingVoiceAgentButton = () => {
           }}
         >
           <div
+            className="floating-voice-btn-icon"
             style={{
               width: '28px',
               height: '28px',
@@ -122,10 +127,10 @@ export const FloatingVoiceAgentButton = () => {
               justifyContent: 'center'
             }}
           >
-            <Mic size={18} color="#6750A4" strokeWidth={2.5} />
+            <Mic size={18} color="#6750A4" />
           </div>
           <span>{getAgentLabel()}</span>
-          <Sparkles size={16} color="#FFD8E4" />
+          <Sparkles size={16} color="#EADDFF" />
         </button>
       </div>
 

@@ -45,6 +45,7 @@ export const VoiceCommandBar = () => {
     <>
       {/* Floating Background Voice Control Strip */}
       <div
+        className="voice-command-bar-container"
         style={{
           position: 'fixed',
           top: '20px',
@@ -58,14 +59,15 @@ export const VoiceCommandBar = () => {
       >
         <button
           onClick={toggleVoiceControl}
+          className="voice-command-toggle-btn"
           aria-label={state.isEnabled ? 'Pause Voice Control' : 'Enable Background Voice Control'}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
             padding: '8px 18px',
-            minHeight: '52px',
-            borderRadius: '26px',
+            minHeight: '48px',
+            borderRadius: '24px',
             backgroundColor: state.isEnabled ? (state.isListening ? '#1E7E34' : '#6750A4') : '#2B2930',
             color: '#FFFFFF',
             border: state.isEnabled ? '2px solid #A8DAB5' : '2px solid #79747E',
@@ -78,6 +80,7 @@ export const VoiceCommandBar = () => {
           }}
         >
           <div
+            className="voice-command-icon-box"
             style={{
               width: '28px',
               height: '28px',
@@ -101,7 +104,7 @@ export const VoiceCommandBar = () => {
                 ? (isTe ? 'వాయిస్ కంట్రోల్: ఆన్' : isHi ? 'वॉइस कंट्रोल: चालू' : 'Voice Control: ON')
                 : (isTe ? 'వాయిస్ కంట్రోల్' : isHi ? 'वॉइस कंट्रोल' : 'Voice Control')}
             </span>
-            <span style={{ fontSize: '0.72rem', opacity: 0.85, fontWeight: 600 }}>
+            <span className="voice-command-subtext" style={{ fontSize: '0.72rem', opacity: 0.85, fontWeight: 600 }}>
               {state.isEnabled
                 ? (state.isListening
                     ? (isTe ? '● వింటోంది... మాట్లాడండి' : '● Listening for commands...')
@@ -114,11 +117,12 @@ export const VoiceCommandBar = () => {
         {/* Quick Command Help Toggle */}
         <button
           onClick={() => setShowCommandsHelp(!showCommandsHelp)}
+          className="voice-command-help-btn"
           title="View Voice Commands"
           style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '22px',
+            width: '42px',
+            height: '42px',
+            borderRadius: '21px',
             backgroundColor: '#FFFFFF',
             border: '2px solid #6750A4',
             display: 'flex',
@@ -128,13 +132,14 @@ export const VoiceCommandBar = () => {
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
           }}
         >
-          <Compass size={22} color="#6750A4" />
+          <Compass size={20} color="#6750A4" />
         </button>
       </div>
 
       {/* Live Command Feedback Pill */}
       {state.lastTranscript && state.isEnabled && (
         <div
+          className="voice-command-feedback-pill"
           style={{
             position: 'fixed',
             top: '80px',
