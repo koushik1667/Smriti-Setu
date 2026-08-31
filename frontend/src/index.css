@@ -1253,7 +1253,36 @@ body {
   .page-content {
     padding-bottom: 160px !important;
   }
+
+  /* Caregiver Hub Mobile Card Fit */
+  .caregiver-page-container {
+    padding: 12px 10px !important;
+  }
+
+  .caregiver-header-card {
+    padding: 16px 14px !important;
+    border-radius: 20px !important;
+  }
+
+  .caregiver-controls-container {
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .caregiver-timeframe-group {
+    width: 100% !important;
+  }
+
+  .caregiver-status-badge, .caregiver-sync-btn {
+    flex: 1 1 calc(50% - 6px) !important;
+    min-width: unset !important;
+    text-align: center !important;
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+  }
 }
+
 
 
 

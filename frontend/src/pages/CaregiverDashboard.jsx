@@ -74,9 +74,10 @@ export const CaregiverDashboard = () => {
   const totalMeds = trajectory.reduce((acc, cur) => acc + (cur.medicationCount || 0), 0);
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 20px' }}>
+    <div className="caregiver-page-container" style={{ maxWidth: '1100px', width: '100%', margin: '0 auto', boxSizing: 'border-box', padding: '16px 12px' }}>
       {/* Top Header & Sync Bar */}
       <div
+        className="caregiver-header-card"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -84,39 +85,64 @@ export const CaregiverDashboard = () => {
           alignItems: 'center',
           gap: '16px',
           backgroundColor: '#FFFFFF',
-          padding: '20px 24px',
+          padding: '20px 18px',
           borderRadius: '24px',
           border: '2px solid #E7E0EC',
           boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-          marginBottom: '24px'
+          marginBottom: '24px',
+          width: '100%',
+          boxSizing: 'border-box'
         }}
       >
-        <div>
+        <div style={{ flex: '1 1 260px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Activity size={26} color="#6750A4" />
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, color: '#1C1B1F' }}>
+            <Activity size={26} color="#6750A4" style={{ flexShrink: 0 }} />
+            <h1 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, color: '#1C1B1F', lineHeight: 1.2 }}>
               {t('caregiverHeader')}
             </h1>
           </div>
-          <p style={{ margin: '4px 0 0', color: '#49454F', fontSize: '0.95rem' }}>
+          <p style={{ margin: '6px 0 0', color: '#49454F', fontSize: '0.88rem', lineHeight: 1.4 }}>
             {t('caregiverSubtitle')}
           </p>
         </div>
 
         {/* Controls: Timeframe, Online status, Sync button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', backgroundColor: '#F3EDF7', borderRadius: '16px', padding: '4px' }}>
+        <div
+          className="caregiver-controls-container"
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '10px',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div
+            className="caregiver-timeframe-group"
+            style={{
+              display: 'flex',
+              backgroundColor: '#F3EDF7',
+              borderRadius: '16px',
+              padding: '4px',
+              flex: '1 1 auto',
+              minWidth: '200px'
+            }}
+          >
             <button
               onClick={() => setTimeframe(7)}
               style={{
-                padding: '8px 16px',
+                flex: 1,
+                padding: '8px 12px',
                 borderRadius: '12px',
                 border: 'none',
                 backgroundColor: timeframe === 7 ? '#6750A4' : 'transparent',
                 color: timeframe === 7 ? '#FFFFFF' : '#49454F',
                 fontWeight: 700,
-                fontSize: '0.9rem',
-                cursor: 'pointer'
+                fontSize: '0.84rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
               {t('trailing7Days')}
@@ -124,14 +150,16 @@ export const CaregiverDashboard = () => {
             <button
               onClick={() => setTimeframe(30)}
               style={{
-                padding: '8px 16px',
+                flex: 1,
+                padding: '8px 12px',
                 borderRadius: '12px',
                 border: 'none',
                 backgroundColor: timeframe === 30 ? '#6750A4' : 'transparent',
                 color: timeframe === 30 ? '#FFFFFF' : '#49454F',
                 fontWeight: 700,
-                fontSize: '0.9rem',
-                cursor: 'pointer'
+                fontSize: '0.84rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
               {t('trailing30Days')}
@@ -139,16 +167,20 @@ export const CaregiverDashboard = () => {
           </div>
 
           <div
+            className="caregiver-status-badge"
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
               padding: '8px 14px',
               borderRadius: '16px',
               backgroundColor: isOnline ? '#D1E7DD' : '#F8D7DA',
               color: isOnline ? '#0F5132' : '#842029',
-              fontSize: '0.85rem',
-              fontWeight: 700
+              fontSize: '0.84rem',
+              fontWeight: 700,
+              flex: '1 1 auto',
+              whiteSpace: 'nowrap'
             }}
           >
             {isOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
@@ -158,21 +190,26 @@ export const CaregiverDashboard = () => {
           <button
             onClick={handleManualSync}
             disabled={syncing || !isOnline}
+            className="caregiver-sync-btn"
             style={{
-              padding: '10px 18px',
+              padding: '8px 16px',
               borderRadius: '16px',
               border: '2px solid #6750A4',
               backgroundColor: '#FFFFFF',
               color: '#6750A4',
               fontWeight: 700,
+              fontSize: '0.84rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              justifyContent: 'center',
+              gap: '6px',
               cursor: isOnline ? 'pointer' : 'not-allowed',
-              opacity: isOnline ? 1 : 0.6
+              opacity: isOnline ? 1 : 0.6,
+              flex: '1 1 auto',
+              whiteSpace: 'nowrap'
             }}
           >
-            <RefreshCw size={18} className={syncing ? 'spin' : ''} />
+            <RefreshCw size={16} className={syncing ? 'spin' : ''} />
             <span>{syncing ? t('syncingStatus') : t('manualSync')}</span>
           </button>
         </div>
