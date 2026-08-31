@@ -131,6 +131,16 @@ class VoiceControlService {
     }
   }
 
+  getState() {
+    return {
+      isEnabled: this.isEnabled,
+      isListening: this.isListening,
+      lastTranscript: this.lastTranscript,
+      lastFeedback: this.lastFeedback,
+      currentLang: this.currentLang
+    };
+  }
+
   setNavigationHandler(handler) {
     this.navigateHandler = handler;
   }

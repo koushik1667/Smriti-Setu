@@ -14,11 +14,17 @@ export const Sidebar = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [vcState, setVcState] = useState(voiceControlService.getState());
+  const [vcState, setVcState] = useState(
+    typeof voiceControlService?.getState === 'function'
+      ? voiceControlService.getState()
+      : { isEnabled: false, isListening: false }
+  );
 
   useEffect(() => {
-    const unsub = voiceControlService.subscribe(setVcState);
-    return () => unsub();
+    if (typeof voiceControlService?.subscribe === 'function') {
+      const unsub = voiceControlService.subscribe(setVcState);
+      return () => unsub();
+    }
   }, []);
 
   const NAV_ITEMS = [
