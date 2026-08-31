@@ -99,17 +99,17 @@ export const VoiceCommandBar = () => {
           </div>
 
           <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
-            <span style={{ lineHeight: 1.1 }}>
+            <span style={{ lineHeight: 1.1, fontWeight: 800 }}>
               {state.isEnabled
-                ? (isTe ? 'వాయిస్ కంట్రోల్: ఆన్' : isHi ? 'वॉइस कंट्रोल: चालू' : 'Voice Control: ON')
-                : (isTe ? 'వాయిస్ కంట్రోల్' : isHi ? 'वॉइस कंट्रोल' : 'Voice Control')}
+                ? (isTe ? 'VC: ఆన్' : isHi ? 'VC: चालू' : 'VC: ON')
+                : 'VC'}
             </span>
             <span className="voice-command-subtext" style={{ fontSize: '0.72rem', opacity: 0.85, fontWeight: 600 }}>
               {state.isEnabled
                 ? (state.isListening
-                    ? (isTe ? '● వింటోంది... మాట్లాడండి' : '● Listening for commands...')
+                    ? (isTe ? '● వింటోంది' : '● Listening')
                     : (isTe ? 'స్టాండ్‌బై' : 'Standby'))
-                : (isTe ? 'నొక్కండి ప్రారంభించడానికి' : 'Tap to enable hands-free')}
+                : (isTe ? 'నొక్కండి' : 'Tap to start')}
             </span>
           </div>
         </button>
