@@ -47,8 +47,8 @@ export const VoiceCommandBar = () => {
       <div
         style={{
           position: 'fixed',
-          bottom: '24px',
-          left: '24px',
+          top: '20px',
+          right: '24px',
           zIndex: 9990,
           display: 'flex',
           alignItems: 'center',
@@ -137,8 +137,8 @@ export const VoiceCommandBar = () => {
         <div
           style={{
             position: 'fixed',
-            bottom: '86px',
-            left: '24px',
+            top: '80px',
+            right: '24px',
             zIndex: 9989,
             backgroundColor: 'rgba(28, 27, 31, 0.94)',
             color: '#FFFFFF',
