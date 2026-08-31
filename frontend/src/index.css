@@ -1181,41 +1181,18 @@ body {
   gap: 10px;
 }
 
+.mobile-fab-trigger {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
-  /* Voice Command Bar: Sits cleanly below the 60px mobile header without obscuring user profile/title */
+  /* Hide the floating Voice Command Bar on mobile since VC is now integrated in .mobile-header */
   .voice-command-bar-container {
-    top: 68px !important;
-    right: 12px !important;
-    gap: 6px !important;
-  }
-
-  .voice-command-toggle-btn {
-    min-height: 36px !important;
-    padding: 4px 10px !important;
-    border-radius: 18px !important;
-    gap: 6px !important;
-    font-size: 0.8rem !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
-  }
-
-  .voice-command-icon-box {
-    width: 24px !important;
-    height: 24px !important;
-    border-radius: 12px !important;
-  }
-
-  .voice-command-subtext {
     display: none !important;
   }
 
-  .voice-command-help-btn {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 18px !important;
-  }
-
   .voice-command-feedback-pill {
-    top: 114px !important;
+    top: 68px !important;
     right: 12px !important;
     left: 12px !important;
     max-width: calc(100vw - 24px) !important;
@@ -1223,25 +1200,53 @@ body {
     padding: 8px 14px !important;
   }
 
-  /* Floating Voice Agent Button: Floats safely ABOVE the 68px bottom dock navigation */
-  .floating-voice-agents-container {
+  /* Mobile FAB Trigger: Compact 48x48 circular button that NEVER covers card content */
+  .mobile-fab-trigger {
+    display: flex !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 24px !important;
+    background: linear-gradient(135deg, #7E57C2 0%, #6750A4 100%) !important;
+    color: #FFFFFF !important;
+    border: 2px solid #EADDFF !important;
+    box-shadow: 0 6px 20px rgba(103, 80, 164, 0.45) !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    position: fixed !important;
     bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 12px) !important;
-    right: 12px !important;
+    right: 14px !important;
+    z-index: 9991 !important;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  }
+
+  .mobile-fab-trigger:active {
+    transform: scale(0.92) !important;
+  }
+
+  /* Pills hidden on mobile until user taps the FAB */
+  .desktop-fab-pills {
+    display: none !important;
+  }
+
+  .desktop-fab-pills.mobile-open {
+    display: flex !important;
+    position: fixed !important;
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 68px) !important;
+    right: 14px !important;
+    z-index: 9992 !important;
+    flex-direction: column !important;
     gap: 8px !important;
+    align-items: flex-end !important;
+    animation: fadeIn 0.2s ease-out !important;
   }
 
   .floating-voice-btn {
-    min-height: 40px !important;
-    padding: 0 14px !important;
-    font-size: 0.82rem !important;
-    border-radius: 20px !important;
-    box-shadow: 0 4px 16px rgba(103, 80, 164, 0.35) !important;
-  }
-
-  .floating-voice-btn-icon {
-    width: 24px !important;
-    height: 24px !important;
-    border-radius: 12px !important;
+    min-height: 44px !important;
+    padding: 0 16px !important;
+    font-size: 0.88rem !important;
+    border-radius: 22px !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
   }
 
   /* Page content padding: Extra scroll cushion so bottom content is never obscured */
@@ -1249,5 +1254,6 @@ body {
     padding-bottom: 160px !important;
   }
 }
+
 
 

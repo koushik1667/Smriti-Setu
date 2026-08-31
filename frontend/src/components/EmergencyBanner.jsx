@@ -26,7 +26,7 @@ export const EmergencyBanner = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         <ShieldAlert size={16} color="#fecaca" />
         <span>
-          <strong>Emergency Disclaimer:</strong> PharmaVision AI is an assistive digital aid. In acute medical emergencies or severe drug reactions, do not rely on AI:
+          <strong>Emergency Disclaimer:</strong> Smriti Setu is an assistive digital aid. In acute medical emergencies or severe drug reactions, do not rely on AI:
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '4px' }}>
           <a

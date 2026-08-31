@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mic, Sparkles, Flower2 } from 'lucide-react';
+import { Mic, Sparkles, Flower2, X } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext.jsx';
 import { LiveVoiceAgentModal } from './LiveVoiceAgentModal.jsx';
 import { VoiceTherapistRoom } from './VoiceTherapistRoom.jsx';
@@ -8,6 +8,7 @@ export const FloatingVoiceAgentButton = () => {
   const { lang } = useLanguage();
   const [isAgentOpen, setIsAgentOpen] = useState(false);
   const [isTherapistOpen, setIsTherapistOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getAgentLabel = () => {
     if (lang === 'te') return 'వాయిస్ AI';
@@ -27,38 +28,42 @@ export const FloatingVoiceAgentButton = () => {
 
   return (
     <>
+      {/* Mobile-Only Compact FAB Trigger (Replaces wide blocking pills on mobile) */}
+      <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="mobile-fab-trigger"
+        aria-label="Toggle Voice Assistants"
+        title="Open Voice Assistants"
+      >
+        {mobileMenuOpen ? <X size={20} /> : <Mic size={20} />}
+      </button>
+
+      {/* Floating Action Pills (Expanded on Desktop, Toggleable Pop-up on Mobile) */}
       <div
-        className="floating-voice-agents-container"
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          zIndex: 9990,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          gap: '10px'
-        }}
+        className={`floating-voice-agents-container desktop-fab-pills${mobileMenuOpen ? ' mobile-open' : ''}`}
       >
         {/* Button 1: Fine-Tuned Voice-to-Voice Therapist */}
         <button
-          onClick={() => setIsTherapistOpen(true)}
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setIsTherapistOpen(true);
+          }}
           className="floating-voice-btn"
           aria-label="Open Voice-to-Voice Geriatric Therapist"
           style={{
-            minHeight: '50px',
+            minHeight: '48px',
             padding: '0 18px',
-            borderRadius: '26px',
+            borderRadius: '24px',
             backgroundColor: '#7E57C2',
             color: '#FFFFFF',
-            border: '2.5px solid #E9D5FF',
+            border: '2px solid #E9D5FF',
             boxShadow: '0 8px 24px rgba(126, 87, 194, 0.45)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             cursor: 'pointer',
             fontWeight: 800,
-            fontSize: '0.96rem',
+            fontSize: '0.94rem',
             transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
             userSelect: 'none'
           }}
@@ -72,39 +77,42 @@ export const FloatingVoiceAgentButton = () => {
           <div
             className="floating-voice-btn-icon"
             style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '14px',
+              width: '26px',
+              height: '26px',
+              borderRadius: '13px',
               backgroundColor: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}
           >
-            <Flower2 size={18} color="#7E57C2" />
+            <Flower2 size={16} color="#7E57C2" />
           </div>
           <span>{getTherapistLabel()}</span>
         </button>
 
         {/* Button 2: Live Voice Agent */}
         <button
-          onClick={() => setIsAgentOpen(true)}
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setIsAgentOpen(true);
+          }}
           className="floating-voice-btn"
           aria-label="Open Live Multilingual Voice Agent"
           style={{
-            minHeight: '50px',
+            minHeight: '48px',
             padding: '0 18px',
-            borderRadius: '26px',
+            borderRadius: '24px',
             backgroundColor: '#6750A4',
             color: '#FFFFFF',
-            border: '2.5px solid #EADDFF',
+            border: '2px solid #EADDFF',
             boxShadow: '0 8px 24px rgba(103, 80, 164, 0.45)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             cursor: 'pointer',
             fontWeight: 800,
-            fontSize: '0.96rem',
+            fontSize: '0.94rem',
             transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
             userSelect: 'none'
           }}
@@ -118,19 +126,19 @@ export const FloatingVoiceAgentButton = () => {
           <div
             className="floating-voice-btn-icon"
             style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '14px',
+              width: '26px',
+              height: '26px',
+              borderRadius: '13px',
               backgroundColor: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}
           >
-            <Mic size={18} color="#6750A4" />
+            <Mic size={16} color="#6750A4" />
           </div>
           <span>{getAgentLabel()}</span>
-          <Sparkles size={16} color="#EADDFF" />
+          <Sparkles size={15} color="#EADDFF" />
         </button>
       </div>
 
