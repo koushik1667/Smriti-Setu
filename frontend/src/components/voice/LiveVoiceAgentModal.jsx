@@ -239,24 +239,29 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
     const trimmed = userText.trim();
     const lower = trimmed.toLowerCase();
 
-    // Direct client detection for immediate instant switch
+    // Direct client detection for immediate instant switch across all 8 languages
     let targetLang = selectedVoiceLang;
     if (lower === 'telugu' || lower === 'in telugu' || lower === 'speak in telugu' || lower === 'తెలుగు') {
       targetLang = 'te';
-      setSelectedVoiceLang('te');
-      changeLanguage('te');
     } else if (lower === 'hindi' || lower === 'in hindi' || lower === 'speak in hindi' || lower === 'हिंदी' || lower === 'हिन्दी') {
       targetLang = 'hi';
-      setSelectedVoiceLang('hi');
-      changeLanguage('hi');
-    } else if (lower === 'tamil' || lower === 'in tamil' || lower === 'தமிழ்') {
+    } else if (lower === 'tamil' || lower === 'in tamil' || lower === 'speak in tamil' || lower === 'தமிழ்') {
       targetLang = 'ta';
-      setSelectedVoiceLang('ta');
-      changeLanguage('ta');
-    } else if (lower === 'kannada' || lower === 'in kannada' || lower === 'ಕನ್ನಡ') {
+    } else if (lower === 'kannada' || lower === 'in kannada' || lower === 'speak in kannada' || lower === 'ಕನ್ನಡ') {
       targetLang = 'kn';
-      setSelectedVoiceLang('kn');
-      changeLanguage('kn');
+    } else if (lower === 'bengali' || lower === 'in bengali' || lower === 'speak in bengali' || lower === 'বাংলা') {
+      targetLang = 'bn';
+    } else if (lower === 'assamese' || lower === 'in assamese' || lower === 'speak in assamese' || lower === 'অসমীয়া') {
+      targetLang = 'as';
+    } else if (lower === 'marathi' || lower === 'in marathi' || lower === 'speak in marathi' || lower === 'मराठी') {
+      targetLang = 'mr';
+    } else if (lower === 'english' || lower === 'in english' || lower === 'speak in english') {
+      targetLang = 'en';
+    }
+
+    if (targetLang !== selectedVoiceLang) {
+      setSelectedVoiceLang(targetLang);
+      changeLanguage(targetLang);
     }
 
     setChatHistory(prev => [...prev, { role: 'user', text: trimmed, timestamp: Date.now() }]);
@@ -292,12 +297,17 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
       }
     } catch (e) {
       console.warn('[LiveVoiceAgent] Fallback reply:', e);
-      let localFallback = AGENT_GREETINGS[targetLang] || AGENT_GREETINGS.en;
-      if (targetLang === 'te') {
-        localFallback = 'నేను మీ మాట విన్నాను. దయచేసి ఒక గ్లాసు మంచినీళ్లు తాగి ఆరాముగా ఉండండి.';
-      } else if (targetLang === 'hi') {
-        localFallback = 'मैंने आपकी बात सुनी। कृपया एक गिलास ताज़ा पानी पिएं और आराम करें।';
-      }
+      const AGENT_FALLBACKS = {
+        te: 'నేను మీ మాట విన్నాను. దయచేసి ఒక గ్లాసు మంచినీళ్లు తాగి ఆరాముగా ఉండండి. నేను మీకు ఎల్లప్పుడూ తోడుగా ఉన్నాను.',
+        hi: 'मैंने आपकी बात सुनी। कृपया एक गिलास ताज़ा पानी पिएं और आराम करें। मैं हमेशा आपकी सहायता के लिए यहाँ हूँ।',
+        ta: 'நான் உங்கள் குரலைக் கேட்டேன். தயவுசெய்து சிறிது தண்ணீர் குடித்து ஓய்வெடுங்கள். நான் உங்களுடன் இருக்கிறேன்.',
+        kn: 'ನಾನು ನಿಮ್ಮ ಮಾತನ್ನು ಕೇಳಿದೆ. ದಯವಿಟ್ಟು ನೀರು ಕುಡಿದು ವಿಶ್ರಾಂತಿ ಪಡೆಯಿರಿ. ನಾನು ನಿಮ್ಮೊಂದಿಗಿದ್ದೇನೆ.',
+        bn: 'আমি আপনার কথা শুনেছি। অনুগ্রহ করে একটু জল খেয়ে বিশ্রাম নিন। আমি আপনার সাথেই আছি।',
+        as: 'মই আপোনাৰ কথা শুনিলোঁ। অনুগ্ৰহ কৰি অলপ পানী খাই জিৰণি লওক। মই আপোনাৰ লগত আছোঁ।',
+        mr: 'मी तुमचे बोलणे ऐकले. कृपया थोडे पाणी प्या आणि विश्रांती घ्या. मी आपल्यासोबत आहे.',
+        en: 'I heard you clearly. Please take a gentle sip of water and rest comfortably. I am here with you.'
+      };
+      const localFallback = AGENT_FALLBACKS[targetLang] || AGENT_GREETINGS[targetLang] || AGENT_GREETINGS.en;
       setLastResponse(localFallback);
       setChatHistory(prev => [...prev, { role: 'agent', text: localFallback, timestamp: Date.now(), lang: targetLang }]);
       speakAgentResponse(localFallback, targetLang);

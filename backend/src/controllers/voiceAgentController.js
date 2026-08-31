@@ -125,18 +125,20 @@ class VoiceAgentController {
         });
       }
 
-      // Detect by script if user types in Indian characters
-      if (/[\u0C00-\u0C7F]/.test(message)) resolvedLang = 'te';
-      else if (/[\u0900-\u097F]/.test(message)) resolvedLang = 'hi';
-      else if (/[\u0B80-\u0BFF]/.test(message)) resolvedLang = 'ta';
-      else if (/[\u0C80-\u0CFF]/.test(message)) resolvedLang = 'kn';
-      else if (/[\u0980-\u09FF]/.test(message)) resolvedLang = 'bn';
+      // Detect by script ONLY if language is not already set or is English
+      if (language === 'en' || !language) {
+        if (/[\u0C00-\u0C7F]/.test(message)) resolvedLang = 'te';
+        else if (/[\u0B80-\u0BFF]/.test(message)) resolvedLang = 'ta';
+        else if (/[\u0C80-\u0CFF]/.test(message)) resolvedLang = 'kn';
+        else if (/[\u0980-\u09FF]/.test(message)) resolvedLang = 'bn';
+        else if (/[\u0900-\u097F]/.test(message)) resolvedLang = 'hi';
+      }
 
       const langInfo = LANG_MAP[resolvedLang] || LANG_MAP.en;
       const targetLangName = langInfo.name;
 
       // ─── 2. Strict AI Prompt Enforcing Regional Script ──────────────────
-      const systemPrompt = `You are "Sanjeevani AI" (సంజీవని / संजीवनी), an extraordinarily empathetic, respectful voice companion for elderly patients in India.
+      const systemPrompt = `You are "Sanjeevani AI" (సంజీవని / संजीवनी / சஞ்சீவனி / ಸಂಜೀವಿನಿ), an extraordinarily empathetic, respectful voice companion for elderly patients in India.
 
 The user is speaking to you in ${targetLangName}.
 User Message: "${message}"
@@ -176,15 +178,23 @@ CRITICAL MANDATORY INSTRUCTIONS:
         let fallbackMsg = langInfo.fallback;
         const lowerMsg = message.toLowerCase();
 
-        if (lowerMsg.includes('water') || lowerMsg.includes('నీళ్లు') || lowerMsg.includes('पानी') || lowerMsg.includes('தண்ணீர்')) {
+        if (lowerMsg.includes('water') || lowerMsg.includes('నీళ్లు') || lowerMsg.includes('पानी') || lowerMsg.includes('தண்ணீர்') || lowerMsg.includes('ನೀರು') || lowerMsg.includes('জল') || lowerMsg.includes('পানী') || lowerMsg.includes('पाणी')) {
           if (resolvedLang === 'te') fallbackMsg = 'దయచేసి ఒక గ్లాసు మంచినీళ్లు తీరిగ్గా తాగండి. రోజంతా తగినంత నీరు తాగడం మీ ఆరోగ్యానికి చాలా మంచిది.';
           else if (resolvedLang === 'hi') fallbackMsg = 'कृपया एक गिलास ताज़ा पानी पिएं। दिन भर में भरपूर पानी पीना आपके स्वास्थ्य के लिए बहुत लाभदायक है।';
           else if (resolvedLang === 'ta') fallbackMsg = 'தயவுசெய்து ஒரு டம்ளர் தண்ணீர் குடியுங்கள். போதுமான தண்ணீர் குடிப்பது உடலுக்கு மிகவும் நல்லது.';
           else if (resolvedLang === 'kn') fallbackMsg = 'ದಯವಿಟ್ಟು ಒಂದು ಲೋಟ ನೀರು ಕುಡಿಯಿರಿ. ದಿನವಿಡೀ ನೀರು ಕುಡಿಯುವುದು ನಿಮ್ಮ ಆರೋಗ್ಯಕ್ಕೆ ಬಹಳ ಒಳ್ಳೆಯದು.';
+          else if (resolvedLang === 'bn') fallbackMsg = 'অনুগ্রহ করে এক গ্লাস তাজা জল পান করুন। জল পান করা আপনার স্বাস্থ্যের পক্ষে খুব ভালো।';
+          else if (resolvedLang === 'as') fallbackMsg = 'অনুগ্ৰহ কৰি এগিলাচ পানী খাওক। পৰ্যাপ্ত পানী খোৱাটো স্বাস্থ্যৰ বাবে খুবেই উপকাৰী।';
+          else if (resolvedLang === 'mr') fallbackMsg = 'कृपया एक ग्लास ताजे पाणी प्या. भरपूर पाणी पिणे आरोग्यासाठी फायदेशीर आहे.';
           else fallbackMsg = 'Please drink a fresh glass of water. Staying well hydrated keeps your mind and body active.';
-        } else if (lowerMsg.includes('medicine') || lowerMsg.includes('మందులు') || lowerMsg.includes('दवा') || lowerMsg.includes('மாத்திரை')) {
+        } else if (lowerMsg.includes('medicine') || lowerMsg.includes('మందులు') || lowerMsg.includes('दवा') || lowerMsg.includes('மாத்திரை') || lowerMsg.includes('ಮಾತ್ರೆ') || lowerMsg.includes('ওষুধ') || lowerMsg.includes('ঔষধ') || lowerMsg.includes('औषध')) {
           if (resolvedLang === 'te') fallbackMsg = 'మీరు సమయానికి మందులు వేసుకోవడం చాలా ముఖ్యం. మీ డాక్టర్ రాసిన ప్రిస్క్రిప్షన్ ప్రకారం వేసుకోండి.';
           else if (resolvedLang === 'hi') fallbackMsg = 'समय पर दवाइयाँ लेना बहुत ज़रूरी है। कृपया डॉक्टर के निर्देशानुसार पानी के साथ दवा लें।';
+          else if (resolvedLang === 'ta') fallbackMsg = 'நேரத்திற்கு மருந்துகளை எடுத்துக்கொள்வது மிகவும் முக்கியம். மருத்துவரின் ஆலோசனைப்படி உட்கொள்ளுங்கள்.';
+          else if (resolvedLang === 'kn') fallbackMsg = 'ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುವುದು ಬಹಳ ಮುಖ್ಯ. ವೈದ್ಯರ ಸಲಹೆಯಂತೆ ಮಾತ್ರೆಗಳನ್ನು ಸೇವಿಸಿ.';
+          else if (resolvedLang === 'bn') fallbackMsg = 'ঠিক সময়ে ওষুধ নেওয়া অত্যন্ত জরুরি। ডাক্তারের পরামর্শ মতো নিয়মিত ওষুধ খান।';
+          else if (resolvedLang === 'as') fallbackMsg = 'সময়মতে ঔষধ খোৱাটো অতি প্ৰয়োজনীয়। ডাক্তৰৰ পৰামৰ্শ মতে নিয়মীয়াকৈ ঔষধ লওক।';
+          else if (resolvedLang === 'mr') fallbackMsg = 'वेळेवर औषध घेणे अत्यंत महत्त्वाचे आहे. कृपया डॉक्टरांच्या सल्ल्यानुसार औषधे घ्या.';
           else fallbackMsg = 'Please ensure you take your prescribed medications on time with a full glass of water.';
         }
 

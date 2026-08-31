@@ -1,13 +1,18 @@
 /**
  * High-Efficiency Multilingual Speech Synthesis & Web Audio Engine
- * Supports Indian Languages: Telugu (te-IN), Hindi (hi-IN), Tamil (ta-IN),
- * Kannada (kn-IN), Bengali (bn-IN), Assamese (as-IN), Marathi (mr-IN), and Indian English (en-IN).
- * Seamlessly integrates /api/tts streaming fallback when OS lacks native regional voice packs.
+ * Supports Indian Languages:
+ * Telugu (te-IN), Hindi (hi-IN), Tamil (ta-IN), Kannada (kn-IN),
+ * Bengali (bn-IN), Assamese (as-IN), Marathi (mr-IN), and Indian English (en-IN).
+ *
+ * Implements a resilient 3-Tier Audio Failover Architecture:
+ * - Tier 1: High-fidelity Server Streaming Audio (/api/tts)
+ * - Tier 2: Direct Client Google TTS Audio Fallback
+ * - Tier 3: Browser Web Speech API (window.speechSynthesis)
  */
 
 import { getApiBaseUrl } from '../services/api';
 
-const LANG_CODE_MAP = {
+export const LANG_CODE_MAP = {
   te: 'te-IN', // Telugu
   hi: 'hi-IN', // Hindi
   ta: 'ta-IN', // Tamil
@@ -18,43 +23,105 @@ const LANG_CODE_MAP = {
   en: 'en-IN'  // Indian English
 };
 
-// Cached voices list & singleton AudioContext for maximum efficiency
+export const GOOGLE_TTS_LANG_MAP = {
+  te: 'te',
+  hi: 'hi',
+  ta: 'ta',
+  kn: 'kn',
+  bn: 'bn',
+  as: 'bn', // Bengali script phonetic fallback for Assamese
+  mr: 'mr',
+  en: 'en'
+};
+
+// Cached voices list & AudioContext state
 let cachedVoices = [];
 let sharedAudioCtx = null;
 let activeAudioElement = null;
+let activeUtterance = null;
+let isAudioUnlocked = false;
 
-// Initialize voices eagerly and cache them
-if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  const updateVoices = () => {
+// ─── Eager Voice Cache Initialization ─────────────────────────────────────────
+if (typeof window !== 'undefined') {
+  const loadVoices = () => {
     try {
-      cachedVoices = window.speechSynthesis.getVoices() || [];
+      if ('speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices() || [];
+      }
     } catch (e) {}
   };
-  updateVoices();
-  if (window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = updateVoices;
+
+  loadVoices();
+  if (typeof window.speechSynthesis !== 'undefined') {
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    window.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
   }
+
+  // Unlock Audio on first user interaction to bypass autoplay restrictions
+  const unlockAudio = () => {
+    if (isAudioUnlocked) return;
+    isAudioUnlocked = true;
+    try {
+      const ctx = getSharedAudioContext();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.resume?.();
+      }
+    } catch (e) {}
+    window.removeEventListener('click', unlockAudio);
+    window.removeEventListener('touchstart', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+  };
+
+  window.addEventListener('click', unlockAudio, { passive: true });
+  window.addEventListener('touchstart', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
 }
 
 /**
- * Singleton AudioContext getter (prevents browser audio resource exhaustion)
+ * Normalizes any language code or alias to standard representations
+ */
+export function normalizeLanguage(langInput) {
+  if (!langInput || typeof langInput !== 'string') {
+    return { short: 'en', bcp47: 'en-IN', googleTl: 'en' };
+  }
+  const clean = langInput.toLowerCase().trim();
+  const prefix = clean.split('-')[0].split('_')[0];
+
+  const short = LANG_CODE_MAP[prefix] ? prefix : (LANG_CODE_MAP[clean] ? clean : 'en');
+  const bcp47 = LANG_CODE_MAP[short] || 'en-IN';
+  const googleTl = GOOGLE_TTS_LANG_MAP[short] || 'en';
+
+  return { short, bcp47, googleTl };
+}
+
+/**
+ * Singleton AudioContext getter
  */
 export function getSharedAudioContext() {
   if (typeof window === 'undefined') return null;
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return null;
 
-  if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
-    sharedAudioCtx = new AudioCtx();
+  try {
+    if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+      sharedAudioCtx = new AudioCtx();
+    }
+    if (sharedAudioCtx.state === 'suspended') {
+      sharedAudioCtx.resume().catch(() => {});
+    }
+    return sharedAudioCtx;
+  } catch (e) {
+    return null;
   }
-  if (sharedAudioCtx.state === 'suspended') {
-    sharedAudioCtx.resume().catch(() => {});
-  }
-  return sharedAudioCtx;
 }
 
 /**
- * Plays a warm, soothing dual chime tone efficiently
+ * Plays a warm, soothing dual chime tone
  */
 export function playGentleTone(frequency1 = 659.25, frequency2 = 987.77) {
   try {
@@ -94,7 +161,7 @@ export function playGentleTone(frequency1 = 659.25, frequency2 = 987.77) {
 }
 
 /**
- * Checks if the browser/OS has an authentic native voice for the given language
+ * Checks if browser/OS has an authentic native voice for the given language
  */
 function hasTrueNativeVoice(targetLang) {
   if (typeof window === 'undefined' || !window.speechSynthesis) return false;
@@ -102,11 +169,15 @@ function hasTrueNativeVoice(targetLang) {
     cachedVoices = window.speechSynthesis.getVoices() || [];
   }
 
-  const bcpCode = LANG_CODE_MAP[targetLang] || targetLang || 'en-IN';
-  const prefix = bcpCode.split('-')[0].toLowerCase();
-  if (prefix === 'en') return true;
+  const { short, bcp47 } = normalizeLanguage(targetLang);
+  if (short === 'en') {
+    return cachedVoices.some(v => v.lang.toLowerCase().startsWith('en'));
+  }
 
-  return cachedVoices.some(v => v.lang.toLowerCase().startsWith(prefix));
+  return cachedVoices.some(v =>
+    v.lang.toLowerCase() === bcp47.toLowerCase() ||
+    v.lang.toLowerCase().startsWith(short)
+  );
 }
 
 /**
@@ -119,23 +190,130 @@ function findBestVoice(targetLang) {
     }
   }
 
-  const bcpCode = LANG_CODE_MAP[targetLang] || targetLang || 'en-IN';
-  const prefix = bcpCode.split('-')[0].toLowerCase();
+  const { short, bcp47 } = normalizeLanguage(targetLang);
 
   // 1. Exact match (e.g., 'te-IN' or 'hi-IN')
-  let match = cachedVoices.find(v => v.lang.toLowerCase() === bcpCode.toLowerCase());
+  let match = cachedVoices.find(v => v.lang.toLowerCase() === bcp47.toLowerCase());
   if (match) return match;
 
   // 2. Language prefix match (e.g., 'te', 'hi', 'ta', 'kn', 'bn')
-  match = cachedVoices.find(v => v.lang.toLowerCase().startsWith(prefix));
+  match = cachedVoices.find(v => v.lang.toLowerCase().startsWith(short));
   if (match) return match;
 
   return null;
 }
 
 /**
- * Plays high-fidelity streaming audio via /api/tts endpoint
- * Guarantees native Indian language audio playback even if Windows lacks voice packs!
+ * Splits text into natural spoken phrases (~120 chars max), avoiding punctuation-only chunks
+ */
+function splitIntoSpokenChunks(text) {
+  if (!text || typeof text !== 'string') return [];
+
+  const clean = text
+    .replace(/[*_#`~[\]]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!clean) return [];
+
+  const rawSentences = clean
+    .split(/([.,!?।\n;:]+)/)
+    .filter(s => s.trim().length > 0);
+
+  const chunks = [];
+  let buffer = '';
+
+  for (const seg of rawSentences) {
+    // If it's pure punctuation, append it to the current buffer
+    if (/^[.,!?।\n;: ]+$/.test(seg)) {
+      buffer += seg;
+      continue;
+    }
+
+    if ((buffer + ' ' + seg).length > 130) {
+      if (buffer.trim() && !/^[.,!?।\n;: ]+$/.test(buffer.trim())) {
+        chunks.push(buffer.trim());
+      }
+      buffer = seg;
+    } else {
+      buffer = buffer ? `${buffer} ${seg}` : seg;
+    }
+  }
+
+  if (buffer.trim() && !/^[.,!?।\n;: ]+$/.test(buffer.trim())) {
+    chunks.push(buffer.trim());
+  }
+
+  if (chunks.length === 0 && clean.length > 0) {
+    chunks.push(clean.substring(0, 180));
+  }
+
+  return chunks;
+}
+
+/**
+ * Fallback to browser SpeechSynthesis directly
+ */
+function speakViaSpeechSynthesis(text, lang = 'en', onEndCallback = null, rate = 0.82) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (onEndCallback) onEndCallback();
+    return;
+  }
+
+  try {
+    window.speechSynthesis.cancel();
+    const { bcp47, short } = normalizeLanguage(lang);
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = bcp47;
+    utterance.rate = rate;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    const matchedVoice = findBestVoice(short);
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+    }
+
+    let finished = false;
+    const finish = () => {
+      if (!finished) {
+        finished = true;
+        activeUtterance = null;
+        if (onEndCallback) onEndCallback();
+      }
+    };
+
+    utterance.onend = finish;
+    utterance.onerror = (err) => {
+      console.warn('[speechUtils] SpeechSynthesis utterance error:', err);
+      finish();
+    };
+
+    activeUtterance = utterance;
+
+    // Workaround for Chrome paused SpeechSynthesis bug
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+
+    window.speechSynthesis.speak(utterance);
+
+    // Timeout safety fallback in case onend never fires in background
+    const approxDurationMs = Math.max(2500, (text.length / 10) * 1000);
+    setTimeout(() => {
+      if (activeUtterance === utterance) {
+        finish();
+      }
+    }, approxDurationMs + 4000);
+  } catch (err) {
+    console.warn('[speechUtils] SpeechSynthesis failed:', err);
+    if (onEndCallback) onEndCallback();
+  }
+}
+
+/**
+ * High-Resilience Streaming Audio Engine with multi-tier failover
  */
 export function playStreamAudio(text, lang = 'te', onEndCallback = null) {
   stopSpeaking();
@@ -145,24 +323,13 @@ export function playStreamAudio(text, lang = 'te', onEndCallback = null) {
     return;
   }
 
-  // Break text into natural spoken phrases (~120 chars max)
-  const rawSentences = text
-    .split(/([.,!?।\n]+)/)
-    .filter(s => s.trim().length > 0);
+  const { short, googleTl, bcp47 } = normalizeLanguage(lang);
+  const chunks = splitIntoSpokenChunks(text);
 
-  const chunks = [];
-  let buffer = '';
-
-  for (const seg of rawSentences) {
-    if ((buffer + seg).length > 130) {
-      if (buffer.trim()) chunks.push(buffer.trim());
-      buffer = seg;
-    } else {
-      buffer += seg;
-    }
+  if (chunks.length === 0) {
+    if (onEndCallback) onEndCallback();
+    return;
   }
-  if (buffer.trim()) chunks.push(buffer.trim());
-  if (chunks.length === 0) chunks.push(text);
 
   let currentIndex = 0;
 
@@ -174,32 +341,61 @@ export function playStreamAudio(text, lang = 'te', onEndCallback = null) {
     }
 
     const chunk = chunks[currentIndex++];
+    const encoded = encodeURIComponent(chunk);
+
+    // Primary server URL
     const apiBase = getApiBaseUrl();
-    const url = `${apiBase}/tts?text=${encodeURIComponent(chunk)}&lang=${lang}`;
-    const audio = new Audio(url);
+    const primaryUrl = `${apiBase}/tts?text=${encoded}&lang=${short}`;
+    // Secondary direct fallback URL
+    const fallbackUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=${googleTl}&client=tw-ob`;
+
+    const audio = new Audio(primaryUrl);
     activeAudioElement = audio;
+
+    let hasTriedFallback = false;
 
     audio.onended = () => {
       playNextChunk();
     };
 
-    audio.onerror = (e) => {
-      console.warn('[speechUtils] Stream audio error on chunk:', e);
-      playNextChunk();
+    audio.onerror = () => {
+      if (!hasTriedFallback) {
+        hasTriedFallback = true;
+        console.warn(`[speechUtils] Primary TTS stream failed for "${short}", trying direct fallback...`);
+        audio.src = fallbackUrl;
+        audio.play().catch(fallbackErr => {
+          console.warn('[speechUtils] Direct fallback also failed, falling back to Web Speech API:', fallbackErr);
+          speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
+        });
+      } else {
+        console.warn('[speechUtils] All audio streaming tiers failed on chunk, using Web Speech API');
+        speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
+      }
     };
 
-    audio.play().catch(playErr => {
-      console.warn('[speechUtils] Audio play failed (interaction needed):', playErr);
-      if (onEndCallback) onEndCallback();
-    });
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(playErr => {
+        console.warn('[speechUtils] Audio play failed (interaction or network):', playErr);
+        if (!hasTriedFallback) {
+          hasTriedFallback = true;
+          audio.src = fallbackUrl;
+          audio.play().catch(() => {
+            speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
+          });
+        } else {
+          speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
+        }
+      });
+    }
   }
 
   playNextChunk();
 }
 
 /**
- * Multilingual speech synthesis with elderly pacing
- * Automatically uses high-fidelity streaming audio if OS lacks local Indian voice packs.
+ * Universal Multilingual Speech Output Function
+ * Automatically uses best synthesis method (Native or High-Fidelity Streaming)
  */
 export function speakText(text, lang = 'en', onEndCallback = null, rate = 0.82) {
   if (!text || typeof text !== 'string') {
@@ -207,51 +403,16 @@ export function speakText(text, lang = 'en', onEndCallback = null, rate = 0.82) 
     return;
   }
 
-  // If language is not English and OS lacks native voice, use streaming audio immediately!
-  if (lang !== 'en' && !hasTrueNativeVoice(lang)) {
-    playStreamAudio(text, lang, onEndCallback);
+  const { short, bcp47 } = normalizeLanguage(lang);
+
+  // If language has native voice installed in OS, use SpeechSynthesis
+  if (hasTrueNativeVoice(short)) {
+    speakViaSpeechSynthesis(text, short, onEndCallback, rate);
     return;
   }
 
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    playStreamAudio(text, lang, onEndCallback);
-    return;
-  }
-
-  try {
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const bcp47 = LANG_CODE_MAP[lang] || lang || 'en-US';
-
-    utterance.lang = bcp47;
-    utterance.rate = rate;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    const matchedVoice = findBestVoice(lang);
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
-    } else if (lang !== 'en') {
-      // No regional voice found, fallback to streaming audio
-      playStreamAudio(text, lang, onEndCallback);
-      return;
-    }
-
-    if (onEndCallback) {
-      utterance.onend = onEndCallback;
-    }
-
-    utterance.onerror = (e) => {
-      console.warn('[speechUtils] Native utterance failed, switching to streaming audio:', e);
-      playStreamAudio(text, lang, onEndCallback);
-    };
-
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    console.warn('[speechUtils] speakText error, falling back to stream:', e);
-    playStreamAudio(text, lang, onEndCallback);
-  }
+  // Otherwise, use high-fidelity audio stream with multi-tier fallback
+  playStreamAudio(text, short, onEndCallback);
 }
 
 /**
@@ -268,9 +429,12 @@ export function stopSpeaking() {
     try {
       activeAudioElement.pause();
       activeAudioElement.currentTime = 0;
+      activeAudioElement.src = '';
     } catch (e) {}
     activeAudioElement = null;
   }
+
+  activeUtterance = null;
 }
 
 /**

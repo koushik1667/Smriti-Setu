@@ -40,7 +40,7 @@ async function request(endpoint, options = {}) {
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 45000);
 
   let response;
   try {
@@ -52,7 +52,7 @@ async function request(endpoint, options = {}) {
   } catch (netErr) {
     clearTimeout(timeoutId);
     if (netErr.name === 'AbortError') {
-      throw new Error('Connection to Smriti Setu server timed out. Please check your connection.');
+      throw new Error('Connection timed out. The server may be waking up (Render cold start) — please try again in a few seconds.');
     }
     throw netErr;
   } finally {

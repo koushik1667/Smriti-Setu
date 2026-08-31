@@ -115,13 +115,17 @@ Be deeply comforting, respectful, and therapeutic. 2 to 3 sentences maximum. No 
         replyText = raw.replace(/[*_#`]/g, '').trim();
       } catch (geminiErr) {
         console.warn('[TherapyController] Gemini fallback:', geminiErr.message);
-        if (language === 'te') {
-          replyText = 'నేను మీ మాటలను శ్రద్ధగా వింటున్నాను అండీ. మీరు నాతో క్షేమంగా ఉన్నారు. కాసేపు ప్రశాంతంగా కళ్ళు మూసుకుని గాలి పీల్చుకోండి.';
-        } else if (language === 'hi') {
-          replyText = 'मैं आपकी बात बहुत ध्यान से सुन रही हूँ जी। आप मेरे साथ बिल्कुल सुरक्षित हैं। शांति से एक गहरी सांस लीजिए।';
-        } else {
-          replyText = 'I hear you softly and clearly. You are completely safe with me. Let us take a peaceful, gentle breath together.';
-        }
+        const THERAPY_FALLBACKS = {
+          te: 'నేను మీ మాటలను శ్రద్ధగా వింటున్నాను అండీ. మీరు నాతో క్షేమంగా ఉన్నారు. కాసేపు ప్రశాంతంగా కళ్ళు మూసుకుని గాలి పీల్చుకోండి.',
+          hi: 'मैं आपकी बात बहुत ध्यान से सुन रही हूँ जी। आप मेरे साथ बिल्कुल सुरक्षित हैं। शांति से एक गहरी सांस लीजिए।',
+          ta: 'நான் உங்கள் குரலை கனிவுடன் கேட்கிறேன் அம்மா/ஐயா. நீங்கள் என்னுடன் பாதுகாப்பாக உள்ளீர்கள். மெதுவாக மூச்சை உள்ளிழுத்து வெளிவிடுங்கள்.',
+          kn: 'ನಾನು ನಿಮ್ಮ ಮಾತನ್ನು ಪ್ರೀತಿಯಿಂದ ಕೇಳುತ್ತಿದ್ದೇನೆ. ನೀವು ನನ್ನೊಂದಿಗೆ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದ್ದೀರಿ. ನಿಧಾನವಾಗಿ ಉಸಿರಾಡಿ.',
+          bn: 'আমি আপনার কথা মনোযোগ দিয়ে শুনছি। আপনি আমার কাছে সম্পূর্ণ নিরাপদ। শান্ত হয়ে ধীরে ধীরে শ্বাস নিন।',
+          as: 'মই আপোনাৰ কথা মৰমেৰে শুনি আছোঁ। আপুনি মোৰ ওচৰত সম্পূৰ্ণ নিৰাপদ। শান্ত হৈ লাহে লাহে উশাহ লওক।',
+          mr: 'मी तुमचे बोलणे अगदी शांतपणे ऐकत आहे. तुम्ही माझ्यासोबत पूर्णपणे सुरक्षित आहात. एक दीर्घ श्वास घ्या.',
+          en: 'I hear you softly and clearly. You are completely safe with me. Let us take a peaceful, gentle breath together.'
+        };
+        replyText = THERAPY_FALLBACKS[language] || THERAPY_FALLBACKS.en;
       }
 
       return res.json({
