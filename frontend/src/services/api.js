@@ -39,10 +39,26 @@ async function request(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers
-  });
+  const controller = new AbortController();
+  const timeoutMs = options.timeout || 9000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal
+    });
+  } catch (netErr) {
+    clearTimeout(timer);
+    if (netErr.name === 'AbortError') {
+      throw new Error('Network request timed out. Please check connection or try again.');
+    }
+    throw netErr;
+  } finally {
+    clearTimeout(timer);
+  }
 
   const text = await response.text();
   let data;
