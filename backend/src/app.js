@@ -160,6 +160,7 @@ if (express) {
       }
 
       req.params = {};
+      req.query = parsedUrl.query || {};
 
       // Response helper
       res.json = (data) => {
