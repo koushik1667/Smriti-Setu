@@ -1,10 +1,10 @@
 /**
  * High-Efficiency Multilingual Speech Synthesis & Web Audio Engine
- * Supports Indian Languages:
+ * Supports ALL 8 Indian Regional Languages:
  * Telugu (te-IN), Hindi (hi-IN), Tamil (ta-IN), Kannada (kn-IN),
  * Bengali (bn-IN), Assamese (as-IN), Marathi (mr-IN), and Indian English (en-IN).
  *
- * Implements a resilient 3-Tier Audio Failover Architecture:
+ * Implements a resilient Triple-Tier Audio Failover Architecture:
  * - Tier 1: High-fidelity Server Streaming Audio (/api/tts)
  * - Tier 2: Direct Client Google TTS Audio Fallback
  * - Tier 3: Browser Web Speech API (window.speechSynthesis)
@@ -29,9 +29,20 @@ export const GOOGLE_TTS_LANG_MAP = {
   ta: 'ta',
   kn: 'kn',
   bn: 'bn',
-  as: 'bn', // Bengali script phonetic fallback for Assamese
+  as: 'bn', // Bengali script phonetic fallback for Assamese on Google TTS engine
   mr: 'mr',
   en: 'en'
+};
+
+const LANG_ALIASES = {
+  te: 'te', 'te-in': 'te', telugu: 'te',
+  hi: 'hi', 'hi-in': 'hi', hindi: 'hi',
+  ta: 'ta', 'ta-in': 'ta', tamil: 'ta',
+  kn: 'kn', 'kn-in': 'kn', kannada: 'kn',
+  bn: 'bn', 'bn-in': 'bn', bengali: 'bn', bangla: 'bn',
+  as: 'as', 'as-in': 'as', assamese: 'as',
+  mr: 'mr', 'mr-in': 'mr', marathi: 'mr',
+  en: 'en', 'en-in': 'en', 'en-us': 'en', 'en-gb': 'en', english: 'en'
 };
 
 // Cached voices list & AudioContext state
@@ -39,6 +50,7 @@ let cachedVoices = [];
 let sharedAudioCtx = null;
 let activeAudioElement = null;
 let activeUtterance = null;
+let activeTimerId = null;
 let isAudioUnlocked = false;
 
 // ─── Eager Voice Cache Initialization ─────────────────────────────────────────
@@ -59,7 +71,7 @@ if (typeof window !== 'undefined') {
     window.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
   }
 
-  // Unlock Audio on first user interaction to bypass autoplay restrictions
+  // Unlock Audio on first user interaction to bypass browser autoplay restrictions
   const unlockAudio = () => {
     if (isAudioUnlocked) return;
     isAudioUnlocked = true;
@@ -83,7 +95,7 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Normalizes any language code or alias to standard representations
+ * Normalizes any language code, BCP-47 tag, or alias to standard representations
  */
 export function normalizeLanguage(langInput) {
   if (!langInput || typeof langInput !== 'string') {
@@ -92,7 +104,7 @@ export function normalizeLanguage(langInput) {
   const clean = langInput.toLowerCase().trim();
   const prefix = clean.split('-')[0].split('_')[0];
 
-  const short = LANG_CODE_MAP[prefix] ? prefix : (LANG_CODE_MAP[clean] ? clean : 'en');
+  const short = LANG_ALIASES[clean] || LANG_ALIASES[prefix] || 'en';
   const bcp47 = LANG_CODE_MAP[short] || 'en-IN';
   const googleTl = GOOGLE_TTS_LANG_MAP[short] || 'en';
 
@@ -161,26 +173,6 @@ export function playGentleTone(frequency1 = 659.25, frequency2 = 987.77) {
 }
 
 /**
- * Checks if browser/OS has an authentic native voice for the given language
- */
-function hasTrueNativeVoice(targetLang) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return false;
-  if (!cachedVoices || cachedVoices.length === 0) {
-    cachedVoices = window.speechSynthesis.getVoices() || [];
-  }
-
-  const { short, bcp47 } = normalizeLanguage(targetLang);
-  if (short === 'en') {
-    return cachedVoices.some(v => v.lang.toLowerCase().startsWith('en'));
-  }
-
-  return cachedVoices.some(v =>
-    v.lang.toLowerCase() === bcp47.toLowerCase() ||
-    v.lang.toLowerCase().startsWith(short)
-  );
-}
-
-/**
  * Finds the optimal native voice matching the language code
  */
 function findBestVoice(targetLang) {
@@ -196,7 +188,7 @@ function findBestVoice(targetLang) {
   let match = cachedVoices.find(v => v.lang.toLowerCase() === bcp47.toLowerCase());
   if (match) return match;
 
-  // 2. Language prefix match (e.g., 'te', 'hi', 'ta', 'kn', 'bn')
+  // 2. Language prefix match (e.g., 'te', 'hi', 'ta', 'kn', 'bn', 'mr')
   match = cachedVoices.find(v => v.lang.toLowerCase().startsWith(short));
   if (match) return match;
 
@@ -204,17 +196,18 @@ function findBestVoice(targetLang) {
 }
 
 /**
- * Splits text into natural spoken phrases (~120 chars max), avoiding punctuation-only chunks
+ * Splits text into natural spoken phrases (~130 chars max), strictly filtering punctuation-only chunks
  */
-function splitIntoSpokenChunks(text) {
+export function splitIntoSpokenChunks(text) {
   if (!text || typeof text !== 'string') return [];
 
+  // Remove markdown symbols and format extra whitespace
   const clean = text
     .replace(/[*_#`~[\]]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
-  if (!clean) return [];
+  if (!clean || /^[\s.,!?;:।\-–—]+$/.test(clean)) return [];
 
   const rawSentences = clean
     .split(/([.,!?।\n;:]+)/)
@@ -224,15 +217,16 @@ function splitIntoSpokenChunks(text) {
   let buffer = '';
 
   for (const seg of rawSentences) {
-    // If it's pure punctuation, append it to the current buffer
+    // If it is pure punctuation, append it to the current buffer
     if (/^[.,!?।\n;: ]+$/.test(seg)) {
       buffer += seg;
       continue;
     }
 
     if ((buffer + ' ' + seg).length > 130) {
-      if (buffer.trim() && !/^[.,!?।\n;: ]+$/.test(buffer.trim())) {
-        chunks.push(buffer.trim());
+      const trimmedBuf = buffer.trim();
+      if (trimmedBuf && !/^[.,!?।\n;: ]+$/.test(trimmedBuf)) {
+        chunks.push(trimmedBuf);
       }
       buffer = seg;
     } else {
@@ -240,21 +234,22 @@ function splitIntoSpokenChunks(text) {
     }
   }
 
-  if (buffer.trim() && !/^[.,!?।\n;: ]+$/.test(buffer.trim())) {
-    chunks.push(buffer.trim());
+  const finalTrimmed = buffer.trim();
+  if (finalTrimmed && !/^[.,!?।\n;: ]+$/.test(finalTrimmed)) {
+    chunks.push(finalTrimmed);
   }
 
-  if (chunks.length === 0 && clean.length > 0) {
-    chunks.push(clean.substring(0, 180));
+  if (chunks.length === 0 && clean.length > 0 && !/^[.,!?।\n;: ]+$/.test(clean)) {
+    chunks.push(clean.substring(0, 150));
   }
 
   return chunks;
 }
 
 /**
- * Fallback to browser SpeechSynthesis directly
+ * Tier 3 Fallback: Browser Web SpeechSynthesis API directly
  */
-function speakViaSpeechSynthesis(text, lang = 'en', onEndCallback = null, rate = 0.82) {
+export function speakViaSpeechSynthesis(text, lang = 'en', onEndCallback = null, rate = 0.82) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     if (onEndCallback) onEndCallback();
     return;
@@ -280,6 +275,10 @@ function speakViaSpeechSynthesis(text, lang = 'en', onEndCallback = null, rate =
       if (!finished) {
         finished = true;
         activeUtterance = null;
+        if (activeTimerId) {
+          clearTimeout(activeTimerId);
+          activeTimerId = null;
+        }
         if (onEndCallback) onEndCallback();
       }
     };
@@ -301,11 +300,11 @@ function speakViaSpeechSynthesis(text, lang = 'en', onEndCallback = null, rate =
 
     // Timeout safety fallback in case onend never fires in background
     const approxDurationMs = Math.max(2500, (text.length / 10) * 1000);
-    setTimeout(() => {
+    activeTimerId = setTimeout(() => {
       if (activeUtterance === utterance) {
         finish();
       }
-    }, approxDurationMs + 4000);
+    }, approxDurationMs + 3500);
   } catch (err) {
     console.warn('[speechUtils] SpeechSynthesis failed:', err);
     if (onEndCallback) onEndCallback();
@@ -313,9 +312,12 @@ function speakViaSpeechSynthesis(text, lang = 'en', onEndCallback = null, rate =
 }
 
 /**
- * High-Resilience Streaming Audio Engine with multi-tier failover
+ * Resilient Triple-Tier Multilingual Audio Engine:
+ * Tier 1: Server TTS Audio Stream (/api/tts)
+ * Tier 2: Direct Client Google TTS stream fallback
+ * Tier 3: Browser Web Speech API fallback
  */
-export function playStreamAudio(text, lang = 'te', onEndCallback = null) {
+export function playStreamAudio(text, lang = 'te', onEndCallback = null, rate = 0.82) {
   stopSpeaking();
 
   if (!text || typeof text !== 'string') {
@@ -343,49 +345,109 @@ export function playStreamAudio(text, lang = 'te', onEndCallback = null) {
     const chunk = chunks[currentIndex++];
     const encoded = encodeURIComponent(chunk);
 
-    // Primary server URL
+    // Tier 1 Primary Server URL
     const apiBase = getApiBaseUrl();
     const primaryUrl = `${apiBase}/tts?text=${encoded}&lang=${short}`;
-    // Secondary direct fallback URL
+    // Tier 2 Secondary Direct Fallback URL
     const fallbackUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=${googleTl}&client=tw-ob`;
 
-    const audio = new Audio(primaryUrl);
+    const audio = new Audio();
+    audio.preload = 'auto';
     activeAudioElement = audio;
 
     let hasTriedFallback = false;
+    let hasStarted = false;
+    let fallbackTimeout = null;
+
+    const cleanupListeners = () => {
+      if (fallbackTimeout) {
+        clearTimeout(fallbackTimeout);
+        fallbackTimeout = null;
+      }
+      audio.onplaying = null;
+      audio.onended = null;
+      audio.onerror = null;
+    };
+
+    const tryTier2Or3 = () => {
+      cleanupListeners();
+      if (!hasTriedFallback) {
+        hasTriedFallback = true;
+        console.warn(`[speechUtils] Tier 1 server stream unavailable for "${short}". Switching to Tier 2 (Direct Client Google TTS)...`);
+        
+        const fallbackAudio = new Audio(fallbackUrl);
+        activeAudioElement = fallbackAudio;
+
+        let tier2Started = false;
+        let tier2Timeout = setTimeout(() => {
+          if (!tier2Started) {
+            console.warn('[speechUtils] Tier 2 direct stream timed out. Switching to Tier 3 (Web Speech API)...');
+            speakViaSpeechSynthesis(chunk, short, () => playNextChunk(), rate);
+          }
+        }, 3500);
+
+        fallbackAudio.onplaying = () => {
+          tier2Started = true;
+          clearTimeout(tier2Timeout);
+        };
+
+        fallbackAudio.onended = () => {
+          clearTimeout(tier2Timeout);
+          playNextChunk();
+        };
+
+        fallbackAudio.onerror = () => {
+          clearTimeout(tier2Timeout);
+          console.warn('[speechUtils] Tier 2 direct stream failed. Switching to Tier 3 (Web Speech API)...');
+          speakViaSpeechSynthesis(chunk, short, () => playNextChunk(), rate);
+        };
+
+        const fallbackPromise = fallbackAudio.play();
+        if (fallbackPromise !== undefined) {
+          fallbackPromise.catch((err) => {
+            clearTimeout(tier2Timeout);
+            console.warn('[speechUtils] Tier 2 playback rejected:', err);
+            speakViaSpeechSynthesis(chunk, short, () => playNextChunk(), rate);
+          });
+        }
+      } else {
+        console.warn('[speechUtils] Streaming failed. Falling back to Tier 3 (Web Speech API)...');
+        speakViaSpeechSynthesis(chunk, short, () => playNextChunk(), rate);
+      }
+    };
+
+    // Auto-timeout for Tier 1: if server is slow / sleeping, failover within 3.5s
+    fallbackTimeout = setTimeout(() => {
+      if (!hasStarted) {
+        console.warn(`[speechUtils] Tier 1 server stream timed out for "${short}". Initiating failover.`);
+        tryTier2Or3();
+      }
+    }, 3500);
+
+    audio.onplaying = () => {
+      hasStarted = true;
+      if (fallbackTimeout) {
+        clearTimeout(fallbackTimeout);
+        fallbackTimeout = null;
+      }
+    };
 
     audio.onended = () => {
+      cleanupListeners();
       playNextChunk();
     };
 
     audio.onerror = () => {
-      if (!hasTriedFallback) {
-        hasTriedFallback = true;
-        console.warn(`[speechUtils] Primary TTS stream failed for "${short}", trying direct fallback...`);
-        audio.src = fallbackUrl;
-        audio.play().catch(fallbackErr => {
-          console.warn('[speechUtils] Direct fallback also failed, falling back to Web Speech API:', fallbackErr);
-          speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
-        });
-      } else {
-        console.warn('[speechUtils] All audio streaming tiers failed on chunk, using Web Speech API');
-        speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
-      }
+      tryTier2Or3();
     };
 
+    // Initiate Tier 1 playback
+    audio.src = primaryUrl;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise.catch(playErr => {
-        console.warn('[speechUtils] Audio play failed (interaction or network):', playErr);
-        if (!hasTriedFallback) {
-          hasTriedFallback = true;
-          audio.src = fallbackUrl;
-          audio.play().catch(() => {
-            speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
-          });
-        } else {
-          speakViaSpeechSynthesis(chunk, short, () => playNextChunk());
-        }
+      playPromise.catch((playErr) => {
+        console.warn('[speechUtils] Tier 1 audio play rejected (autoplay or network):', playErr);
+        tryTier2Or3();
       });
     }
   }
@@ -395,7 +457,7 @@ export function playStreamAudio(text, lang = 'te', onEndCallback = null) {
 
 /**
  * Universal Multilingual Speech Output Function
- * Automatically uses best synthesis method (Native or High-Fidelity Streaming)
+ * Uses the resilient Triple-Tier Audio Engine with natural Indian voice pitch across all 8 languages.
  */
 export function speakText(text, lang = 'en', onEndCallback = null, rate = 0.82) {
   if (!text || typeof text !== 'string') {
@@ -403,16 +465,8 @@ export function speakText(text, lang = 'en', onEndCallback = null, rate = 0.82) 
     return;
   }
 
-  const { short, bcp47 } = normalizeLanguage(lang);
-
-  // If language has native voice installed in OS, use SpeechSynthesis
-  if (hasTrueNativeVoice(short)) {
-    speakViaSpeechSynthesis(text, short, onEndCallback, rate);
-    return;
-  }
-
-  // Otherwise, use high-fidelity audio stream with multi-tier fallback
-  playStreamAudio(text, short, onEndCallback);
+  const { short } = normalizeLanguage(lang);
+  playStreamAudio(text, short, onEndCallback, rate);
 }
 
 /**
@@ -425,11 +479,18 @@ export function stopSpeaking() {
     } catch (e) {}
   }
 
+  if (activeTimerId) {
+    clearTimeout(activeTimerId);
+    activeTimerId = null;
+  }
+
   if (activeAudioElement) {
     try {
       activeAudioElement.pause();
       activeAudioElement.currentTime = 0;
       activeAudioElement.src = '';
+      activeAudioElement.onended = null;
+      activeAudioElement.onerror = null;
     } catch (e) {}
     activeAudioElement = null;
   }
@@ -438,7 +499,9 @@ export function stopSpeaking() {
 }
 
 /**
- * Pre-compiled, culturally comforting voice prompts for low-connectivity environments
+ * Pre-compiled, culturally comforting voice prompts for all 8 Indian regional languages:
+ * Telugu (te), Hindi (hi), Tamil (ta), Kannada (kn),
+ * Bengali (bn), Assamese (as), Marathi (mr), and English (en).
  */
 export const VOICE_PROMPTS = {
   hydration: {

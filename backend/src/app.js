@@ -173,6 +173,21 @@ if (express) {
         return res;
       };
 
+      res.send = (data) => {
+        if (!res.headersSent) {
+          if (Buffer.isBuffer(data)) {
+            if (!res.getHeader('Content-Type')) {
+              res.setHeader('Content-Type', 'audio/mpeg');
+            }
+          } else if (typeof data === 'string') {
+            if (!res.getHeader('Content-Type')) {
+              res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            }
+          }
+        }
+        res.end(data);
+      };
+
       let matchedRoute = null;
       for (const r of routes) {
         if (r.method !== req.method) continue;

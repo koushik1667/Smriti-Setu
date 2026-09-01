@@ -1,5 +1,42 @@
 const { generateWithFailover } = require('../services/geminiKeyManager');
 
+const NORM_LANG_MAP = {
+  te: 'te',
+  'te-in': 'te',
+  telugu: 'te',
+  hi: 'hi',
+  'hi-in': 'hi',
+  hindi: 'hi',
+  ta: 'ta',
+  'ta-in': 'ta',
+  tamil: 'ta',
+  kn: 'kn',
+  'kn-in': 'kn',
+  kannada: 'kn',
+  bn: 'bn',
+  'bn-in': 'bn',
+  bengali: 'bn',
+  bangla: 'bn',
+  mr: 'mr',
+  'mr-in': 'mr',
+  marathi: 'mr',
+  as: 'as',
+  'as-in': 'as',
+  assamese: 'as',
+  en: 'en',
+  'en-in': 'en',
+  'en-us': 'en',
+  'en-gb': 'en',
+  english: 'en'
+};
+
+function normalizeLanguageCode(lang) {
+  if (!lang || typeof lang !== 'string') return 'en';
+  const clean = lang.toLowerCase().trim();
+  const prefix = clean.split('-')[0].split('_')[0];
+  return NORM_LANG_MAP[clean] || NORM_LANG_MAP[prefix] || 'en';
+}
+
 const LANG_MAP = {
   te: { name: 'Telugu', fallback: 'నమస్కారం! నేను మీ వాయిస్ అసిస్టెంట్‌ని. మీ ఆరోగ్యం, మందులు లేదా జ్ఞాపకశక్తి గురించి నన్ను ఏదైనా అడగవచ్చు.' },
   hi: { name: 'Hindi', fallback: 'नमस्ते! मैं आपका वॉइस असिस्टेंट हूँ। अपनी सेहत, दवाओं या स्मरण खेल के बारे में मुझसे कुछ भी पूछें।' },
@@ -34,11 +71,11 @@ class VoiceAgentController {
       const trimmed = message.trim();
       const lower = trimmed.toLowerCase();
 
-      // ─── 1. Automatic Language Intent & Script Detection ────────────────
-      let resolvedLang = language;
+      // Normalize client-supplied language code
+      let resolvedLang = normalizeLanguageCode(language);
 
+      // ─── 1. Automatic Language Intent & Direct Switch ────────────────
       if (lower === 'te' || lower === 'telugu' || lower === 'in telugu' || lower === 'speak in telugu' || lower === 'talk in telugu' || lower === 'తెలుగు' || lower.includes('తెలుగులో')) {
-        resolvedLang = 'te';
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.te,
@@ -49,7 +86,6 @@ class VoiceAgentController {
       }
 
       if (lower === 'hi' || lower === 'hindi' || lower === 'in hindi' || lower === 'speak in hindi' || lower === 'talk in hindi' || lower === 'हिंदी' || lower === 'हिन्दी' || lower.includes('हिंदी में')) {
-        resolvedLang = 'hi';
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.hi,
@@ -59,8 +95,7 @@ class VoiceAgentController {
         });
       }
 
-      if (lower === 'ta' || lower === 'tamil' || lower === 'in tamil' || lower === 'speak in tamil' || lower === 'தமிழ்') {
-        resolvedLang = 'ta';
+      if (lower === 'ta' || lower === 'tamil' || lower === 'in tamil' || lower === 'speak in tamil' || lower === 'talk in tamil' || lower === 'தமிழ்' || lower.includes('தமிழில்')) {
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.ta,
@@ -70,8 +105,7 @@ class VoiceAgentController {
         });
       }
 
-      if (lower === 'kn' || lower === 'kannada' || lower === 'in kannada' || lower === 'speak in kannada' || lower === 'ಕನ್ನಡ') {
-        resolvedLang = 'kn';
+      if (lower === 'kn' || lower === 'kannada' || lower === 'in kannada' || lower === 'speak in kannada' || lower === 'talk in kannada' || lower === 'ಕನ್ನಡ' || lower.includes('ಕನ್ನಡದಲ್ಲಿ')) {
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.kn,
@@ -81,8 +115,7 @@ class VoiceAgentController {
         });
       }
 
-      if (lower === 'bn' || lower === 'bengali' || lower === 'in bengali' || lower === 'speak in bengali' || lower === 'বাংলা') {
-        resolvedLang = 'bn';
+      if (lower === 'bn' || lower === 'bengali' || lower === 'in bengali' || lower === 'speak in bengali' || lower === 'talk in bengali' || lower === 'বাংলা' || lower.includes('বাংলায়')) {
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.bn,
@@ -92,8 +125,7 @@ class VoiceAgentController {
         });
       }
 
-      if (lower === 'mr' || lower === 'marathi' || lower === 'in marathi' || lower === 'speak in marathi' || lower === 'मराठी') {
-        resolvedLang = 'mr';
+      if (lower === 'mr' || lower === 'marathi' || lower === 'in marathi' || lower === 'speak in marathi' || lower === 'talk in marathi' || lower === 'मराठी' || lower.includes('मराठीत')) {
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.mr,
@@ -103,8 +135,7 @@ class VoiceAgentController {
         });
       }
 
-      if (lower === 'as' || lower === 'assamese' || lower === 'in assamese' || lower === 'speak in assamese' || lower === 'অসমীয়া') {
-        resolvedLang = 'as';
+      if (lower === 'as' || lower === 'assamese' || lower === 'in assamese' || lower === 'speak in assamese' || lower === 'talk in assamese' || lower === 'অসমীয়া' || lower.includes('অসমীয়াত')) {
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.as,
@@ -114,8 +145,7 @@ class VoiceAgentController {
         });
       }
 
-      if (lower === 'en' || lower === 'english' || lower === 'in english' || lower === 'speak in english') {
-        resolvedLang = 'en';
+      if (lower === 'en' || lower === 'english' || lower === 'in english' || lower === 'speak in english' || lower === 'talk in english') {
         return res.json({
           success: true,
           response: DIRECT_SWITCH_RESPONSES.en,
@@ -125,20 +155,37 @@ class VoiceAgentController {
         });
       }
 
-      // Detect by script ONLY if language is not already set or is English
-      if (language === 'en' || !language) {
-        if (/[\u0C00-\u0C7F]/.test(message)) resolvedLang = 'te';
-        else if (/[\u0B80-\u0BFF]/.test(message)) resolvedLang = 'ta';
-        else if (/[\u0C80-\u0CFF]/.test(message)) resolvedLang = 'kn';
-        else if (/[\u0980-\u09FF]/.test(message)) resolvedLang = 'bn';
-        else if (/[\u0900-\u097F]/.test(message)) resolvedLang = 'hi';
+      // ─── 2. Script Detection (Respects Selected Language) ──────────────
+      // If language was explicitly set to a regional language, NEVER override it with generic script detection.
+      if (resolvedLang === 'en') {
+        if (/[\u0C00-\u0C7F]/.test(message)) {
+          resolvedLang = 'te';
+        } else if (/[\u0B80-\u0BFF]/.test(message)) {
+          resolvedLang = 'ta';
+        } else if (/[\u0C80-\u0CFF]/.test(message)) {
+          resolvedLang = 'kn';
+        } else if (/[\u0980-\u09FF]/.test(message)) {
+          // Check for Assamese-unique characters (ৰ \u09F0, ৱ \u09F1) or Assamese words
+          if (/[\u09F0\u09F1]/.test(message) || /(নমস্কাৰ|আছোঁ|কেনে|খাওক|পানী|হ’ল|কি কি|আপোনাৰ|সহায়ক)/.test(message)) {
+            resolvedLang = 'as';
+          } else {
+            resolvedLang = 'bn';
+          }
+        } else if (/[\u0900-\u097F]/.test(message)) {
+          // Check for Marathi-unique characters (ळ \u0933) or Marathi words
+          if (/[\u0933]/.test(message) || /(आहे|नाही|कसे|तुम्ही|काय|पाणी|औषध|नमस्कार|व्हॉइस|सहाय्यक)/.test(message)) {
+            resolvedLang = 'mr';
+          } else {
+            resolvedLang = 'hi';
+          }
+        }
       }
 
       const langInfo = LANG_MAP[resolvedLang] || LANG_MAP.en;
       const targetLangName = langInfo.name;
 
-      // ─── 2. Strict AI Prompt Enforcing Regional Script ──────────────────
-      const systemPrompt = `You are "Sanjeevani AI" (సంజీవని / संजीवनी / சஞ்சீவனி / ಸಂಜೀವಿನಿ), an extraordinarily empathetic, respectful voice companion for elderly patients in India.
+      // ─── 3. Strict AI Prompt Enforcing Regional Script ──────────────────
+      const systemPrompt = `You are "Sanjeevani AI" (సంజీవని / संजीवनी / சஞ்சீவனி / ಸಂಜೀವಿನಿ / সঞ্জীবনী / সঞ্জীৱনী / संजीवनी), an extraordinarily empathetic, respectful voice companion for elderly patients in India.
 
 The user is speaking to you in ${targetLangName}.
 User Message: "${message}"
@@ -170,7 +217,7 @@ CRITICAL MANDATORY INSTRUCTIONS:
           response: cleanResponse,
           language: resolvedLang,
           spokenLanguage: targetLangName,
-          switchedLanguage: resolvedLang !== language ? resolvedLang : undefined
+          switchedLanguage: resolvedLang !== normalizeLanguageCode(language) ? resolvedLang : undefined
         });
       } catch (aiErr) {
         console.warn('[VoiceAgentController] AI response fallback:', aiErr.message);
@@ -203,7 +250,7 @@ CRITICAL MANDATORY INSTRUCTIONS:
           response: fallbackMsg,
           language: resolvedLang,
           fallback: true,
-          switchedLanguage: resolvedLang !== language ? resolvedLang : undefined
+          switchedLanguage: resolvedLang !== normalizeLanguageCode(language) ? resolvedLang : undefined
         });
       }
     } catch (err) {

@@ -52,26 +52,32 @@ const SUGGESTED_QUERIES = {
   ta: [
     'நான் இப்போது தண்ணீர் குடிக்க வேண்டுமா?',
     'என் காலை மருந்துகள் என்ன?',
-    'நினைவாற்றலை எவ்வாறு அதிகரிப்பது?'
+    'நினைவாற்றலை எவ்வாறு அதிகரிப்பது?',
+    'எனக்கு தலைவலியாக இருக்கிறது, என்ன செய்வது?'
   ],
   kn: [
     'ನಾನು ಈಗ ನೀರು ಕುಡಿಯಬೇಕೇ?',
     'ನನ್ನ ಮುಂಜಾನೆಯ ಮಾತ್ರೆಗಳು ಯಾವುವು?',
-    'ಸ್ಮರಣಶಕ್ತಿ ಹೆಚ್ಚಿಸುವುದು ಹೇಗೆ?'
+    'ಸ್ಮರಣಶಕ್ತಿ ಹೆಚ್ಚಿಸುವುದು ಹೇಗೆ?',
+    'ನನಗೆ ತಲೆನೋವು ಇದೆ, ಏನು ಮಾಡಬೇಕು?'
   ],
   bn: [
     'আমার কি এখন জল খাওয়া উচিত?',
     'আমার সকালের ওষুধগুলি কী কী?',
-    'স্মৃতিশক্তি কীভাবে বাড়াব?'
+    'স্মৃতিশক্তি কীভাবে বাড়াব?',
+    'আমার মাথা ব্যথা করছে, কী করব?'
   ],
   as: [
     'মই এতিয়া পানী খাব লাগে নেকি?',
-    'মোৰ ৰাতিপুৱাৰ ঔষধ কি কি?'
+    'মোৰ ৰাতিপুৱাৰ ঔষধ কি কি?',
+    'স্মৃতিশক্তি কেনেকৈ বঢ়াব পাৰি?',
+    'মোৰ মূৰৰ বিষ হৈছে, কি কৰিম?'
   ],
   mr: [
     'मी आता पाणी प्यावे का?',
     'माझी सकाळची औषधे कोणती आहेत?',
-    'स्मरणशक्ती कशी वाढवावी?'
+    'स्मरणशक्ती कशी वाढवावी?',
+    'मला डोकेदुखी आहे, मी काय करू?'
   ],
   en: [
     'Should I drink a glass of water now?',
@@ -90,6 +96,105 @@ const AGENT_GREETINGS = {
   as: 'নমস্কাৰ! মই আপোনাৰ লাইভ মাত সহায়ক। অসমীয়াত কথা ক’বলৈ মাইক টিপক।',
   mr: 'नमस्कार! मी तुमचा थेट व्हॉइस सहाय्यक आहे. मराठीत बोलण्यासाठी माइक दाबा.',
   en: 'Hello! I am your Live Voice Assistant. Tap the microphone to talk to me.'
+};
+
+const AGENT_TITLES = {
+  te: 'సంజీవని AI లైవ్ వాయిస్ అసిస్టెంట్',
+  hi: 'संजीवनी एआई लाइव वॉइस असिस्टेंट',
+  ta: 'சஞ்சீவனி AI நேரடி குரல் உதவியாளர்',
+  kn: 'ಸಂಜೀವಿನಿ AI ಲೈವ್ ಧ್ವನಿ ಸಹಾಯಕ',
+  bn: 'সঞ্জীবনী AI লাইভ ভয়েস সহকারী',
+  as: 'সঞ্জীৱনী AI লাইভ মাত সহায়ক',
+  mr: 'संजीवनी AI थेट व्हॉइस सहाय्यक',
+  en: 'Sanjeevani AI Live Voice Agent'
+};
+
+const LISTEN_AGAIN_LABELS = {
+  te: 'మళ్లీ వినండి',
+  hi: 'दोबारा सुनें',
+  ta: 'மீண்டும் கேட்க',
+  kn: 'ಮತ್ತೆ ಕೇಳಿ',
+  bn: 'আবার শুনুন',
+  as: 'আকৌ শুনক',
+  mr: 'पुन्हा ऐका',
+  en: 'Listen Again'
+};
+
+const MIC_PROMPTS = {
+  listening: {
+    te: 'ఇప్పుడు మాట్లాడండి... (ఆపడానికి నొక్కండి)',
+    hi: 'अब बोलें... (रोकने के लिए दबाएं)',
+    ta: 'இப்போது பேசுங்கள்... (நிறுத்த தட்டவும்)',
+    kn: 'ಈಗ ಮಾತನಾಡಿ... (ನಿಲ್ಲಿಸಲು ಒತ್ತಿ)',
+    bn: 'এখন বলুন... (থামাতে ট্যাপ করুন)',
+    as: 'এতিয়া কওক... (ৰখাবলৈ টিপক)',
+    mr: 'आता बोला... (थांबवण्यासाठी टॅप करा)',
+    en: 'Listening... Speak now (Tap to stop)'
+  },
+  ready: {
+    te: 'తెలుగులో మాట్లాడటానికి మైక్ నొక్కండి',
+    hi: 'हिंदी में बात करने के लिए माइक दबाएं',
+    ta: 'தமிழில் பேச மைக்கை அழுத்தவும்',
+    kn: 'ಕನ್ನಡದಲ್ಲಿ ಮಾತನಾಡಲು ಮೈಕ್ ಒತ್ತಿ',
+    bn: 'বাংলায় কথা বলতে মাইক টিপুন',
+    as: 'অসমীয়াত কথা ক’বলৈ মাইক টিপক',
+    mr: 'मराठीत बोलण्यासाठी माइक दाबा',
+    en: 'Tap Microphone to Speak'
+  }
+};
+
+const STATUS_TEXTS = {
+  listening: {
+    te: 'వింటోంది...',
+    hi: 'सुन रहा है...',
+    ta: 'கேட்கிறது...',
+    kn: 'ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದೆ...',
+    bn: 'শুনছে...',
+    as: 'শুনি আছে...',
+    mr: 'ऐकत आहे...',
+    en: 'Listening...'
+  },
+  speaking: {
+    te: 'మాట్లాడుతోంది...',
+    hi: 'बोल रहा है...',
+    ta: 'பேசுகிறது...',
+    kn: 'ಮಾತನಾಡುತ್ತಿದೆ...',
+    bn: 'কথা বলছে...',
+    as: 'কথা কৈ আছে...',
+    mr: 'बोलत आहे...',
+    en: 'Speaking...'
+  },
+  thinking: {
+    te: 'ఆలోచిస్తోంది...',
+    hi: 'सोच रहा है...',
+    ta: 'யோசிக்கிறது...',
+    kn: 'ಯೋಚಿಸುತ್ತಿದೆ...',
+    bn: 'চিন্তাভাবনা করছে...',
+    as: 'চিন্তা কৰি আছে...',
+    mr: 'विचार करत आहे...',
+    en: 'Thinking...'
+  },
+  ready: {
+    te: 'సిద్ధంగా ఉంది (తెలుగు)',
+    hi: 'तैयार है (हिंदी)',
+    ta: 'தயாராக உள்ளது (தமிழ்)',
+    kn: 'ಸಿದ್ಧವಾಗಿದೆ (ಕನ್ನಡ)',
+    bn: 'প্রস্তুত (বাংলা)',
+    as: 'সাজু আছে (অসমীয়া)',
+    mr: 'तयार आहे (मराठी)',
+    en: 'Ready (English)'
+  }
+};
+
+const INPUT_PLACEHOLDERS = {
+  te: 'లేదా తెలుగులో ఇక్కడ టైప్ చేయండి...',
+  hi: 'या हिंदी में यहाँ टाइप करें...',
+  ta: 'அல்லது தமிழில் இங்கே தட்டச்சு செய்யவும்...',
+  kn: 'ಅಥವಾ ಕನ್ನಡದಲ್ಲಿ ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ...',
+  bn: 'অথবা বাংলায় এখানে টাইপ করুন...',
+  as: 'বা অসমীয়াত ইয়াত টাইপ কৰক...',
+  mr: 'किंवा मराठीत येथे टाइप करा...',
+  en: 'Or type here in your language...'
 };
 
 export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
@@ -392,15 +497,7 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
                     lineHeight: 1.2
                   }}
                 >
-                  {selectedVoiceLang === 'te'
-                    ? 'సంజీవని AI లైవ్ వాయిస్ అసిస్టెంట్'
-                    : selectedVoiceLang === 'hi'
-                    ? 'संजीवनी एआई लाइव वॉइस असिस्टेंट'
-                    : selectedVoiceLang === 'ta'
-                    ? 'சஞ்சீவனி AI நேரடி குரல் உதவியாளர்'
-                    : selectedVoiceLang === 'kn'
-                    ? 'ಸಂಜೀವಿನಿ AI ಲೈವ್ ಧ್ವನಿ ಸಹಾಯಕ'
-                    : 'Sanjeevani AI Live Voice Agent'}
+                  {AGENT_TITLES[selectedVoiceLang] || AGENT_TITLES.en}
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                   <span
@@ -413,12 +510,12 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
                   />
                   <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#49454F' }}>
                     {isListening
-                      ? (selectedVoiceLang === 'te' ? 'వింటోంది...' : selectedVoiceLang === 'hi' ? 'सुन रहा है...' : 'Listening...')
+                      ? (STATUS_TEXTS.listening[selectedVoiceLang] || STATUS_TEXTS.listening.en)
                       : isSpeaking
-                      ? (selectedVoiceLang === 'te' ? 'మాట్లాడుతోంది...' : selectedVoiceLang === 'hi' ? 'बोल रहा है...' : 'Speaking...')
+                      ? (STATUS_TEXTS.speaking[selectedVoiceLang] || STATUS_TEXTS.speaking.en)
                       : isLoading
-                      ? (selectedVoiceLang === 'te' ? 'ఆలోచిస్తోంది...' : selectedVoiceLang === 'hi' ? 'सोच रहा है...' : 'Thinking...')
-                      : (selectedVoiceLang === 'te' ? 'సిద్ధంగా ఉంది (తెలుగు)' : selectedVoiceLang === 'hi' ? 'तैयार है (हिंदी)' : `Ready (${selectedVoiceLang.toUpperCase()})`)}
+                      ? (STATUS_TEXTS.thinking[selectedVoiceLang] || STATUS_TEXTS.thinking.en)
+                      : (STATUS_TEXTS.ready[selectedVoiceLang] || STATUS_TEXTS.ready.en)}
                   </span>
                 </div>
               </div>
@@ -553,7 +650,7 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
                       }}
                     >
                       <Volume2 size={16} color="#6750A4" />
-                      <span>{selectedVoiceLang === 'te' ? 'మళ్లీ వినండి' : selectedVoiceLang === 'hi' ? 'दोबारा सुनें' : 'Listen Again'}</span>
+                      <span>{LISTEN_AGAIN_LABELS[msg.lang || selectedVoiceLang] || LISTEN_AGAIN_LABELS.en}</span>
                     </button>
                   )}
                 </div>
@@ -597,7 +694,7 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
                 }}
               >
                 <Sparkles size={20} className="pulse" />
-                <span>{selectedVoiceLang === 'te' ? 'సమాధానం సిద్ధమవుతోంది...' : selectedVoiceLang === 'hi' ? 'उत्तर तैयार हो रहा है...' : 'Preparing comforting response...'}</span>
+                <span>{STATUS_TEXTS.thinking[selectedVoiceLang] || STATUS_TEXTS.thinking.en}</span>
               </div>
             </div>
           )}
@@ -700,8 +797,8 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
               }}
             >
               {isListening
-                ? (selectedVoiceLang === 'te' ? 'ఇప్పుడు మాట్లాడండి... (ఆపడానికి నొక్కండి)' : selectedVoiceLang === 'hi' ? 'अब बोलें... (रोकने के लिए दबाएं)' : 'Listening... Speak now (Tap to stop)')
-                : (selectedVoiceLang === 'te' ? 'తెలుగులో మాట్లాడటానికి మైక్ నొక్కండి' : selectedVoiceLang === 'hi' ? 'हिंदी में बात करने के लिए माइक दबाएं' : 'Tap Microphone to Speak')}
+                ? (MIC_PROMPTS.listening[selectedVoiceLang] || MIC_PROMPTS.listening.en)
+                : (MIC_PROMPTS.ready[selectedVoiceLang] || MIC_PROMPTS.ready.en)}
             </span>
           </div>
 
@@ -716,13 +813,7 @@ export const LiveVoiceAgentModal = ({ isOpen, onClose }) => {
                   handleSendMessage(manualInput.trim());
                 }
               }}
-              placeholder={
-                selectedVoiceLang === 'te'
-                  ? 'లేదా తెలుగులో ఇక్కడ టైప్ చేయండి...'
-                  : selectedVoiceLang === 'hi'
-                  ? 'या हिंदी में यहाँ टाइप करें...'
-                  : 'Or type here in your language...'
-              }
+              placeholder={INPUT_PLACEHOLDERS[selectedVoiceLang] || INPUT_PLACEHOLDERS.en}
               style={{
                 flex: 1,
                 minHeight: '48px',

@@ -9,6 +9,42 @@
 
 const { generateWithFailover } = require('../services/geminiKeyManager');
 
+const NORM_LANG_MAP = {
+  te: 'te',
+  'te-in': 'te',
+  telugu: 'te',
+  hi: 'hi',
+  'hi-in': 'hi',
+  hindi: 'hi',
+  ta: 'ta',
+  'ta-in': 'ta',
+  tamil: 'ta',
+  kn: 'kn',
+  'kn-in': 'kn',
+  kannada: 'kn',
+  bn: 'bn',
+  'bn-in': 'bn',
+  bengali: 'bn',
+  bangla: 'bn',
+  mr: 'mr',
+  'mr-in': 'mr',
+  marathi: 'mr',
+  as: 'as',
+  'as-in': 'as',
+  assamese: 'as',
+  en: 'en',
+  'en-in': 'en',
+  'en-us': 'en',
+  english: 'en'
+};
+
+function normalizeLanguageCode(lang) {
+  if (!lang || typeof lang !== 'string') return 'te';
+  const clean = lang.toLowerCase().trim();
+  const prefix = clean.split('-')[0].split('_')[0];
+  return NORM_LANG_MAP[clean] || NORM_LANG_MAP[prefix] || 'te';
+}
+
 const THERAPY_SYSTEM_PROMPT = `
 You are Dr. Ananya, a deeply compassionate, gentle, and culturally attuned Geriatric Cognitive Therapist and Clinical Counselor in India.
 Your mission is to provide soothing, therapeutic voice conversation for elderly individuals with early-to-moderate dementia, Alzheimer's, memory decline, or loneliness.
@@ -41,6 +77,17 @@ const INITIAL_THERAPIST_GREETINGS = {
   en: 'Hello my dear friend, I am your therapist Dr. Ananya. Sit back comfortably and talk with me. How are you feeling today?'
 };
 
+const THERAPY_FALLBACKS = {
+  te: 'నేను మీ మాటలను శ్రద్ధగా వింటున్నాను అండీ. మీరు నాతో క్షేమంగా ఉన్నారు. కాసేపు ప్రశాంతంగా కళ్ళు మూసుకుని గాలి పీల్చుకోండి.',
+  hi: 'मैं आपकी बात बहुत ध्यान से सुन रही हूँ जी। आप मेरे साथ बिल्कुल सुरक्षित हैं। शांति से एक गहरी सांस लीजिए।',
+  ta: 'நான் உங்கள் குரலை கனிவுடன் கேட்கிறேன் அம்மா/ஐயா. நீங்கள் என்னுடன் பாதுகாப்பாக உள்ளீர்கள். மெதுவாக மூச்சை உள்ளிழுத்து வெளிவிடுங்கள்.',
+  kn: 'ನಾನು ನಿಮ್ಮ ಮಾತನ್ನು ಪ್ರೀತಿಯಿಂದ ಕೇಳುತ್ತಿದ್ದೇನೆ. ನೀವು ನನ್ನೊಂದಿಗೆ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದ್ದೀರಿ. ನಿಧಾನವಾಗಿ ಉಸಿರಾಡಿ.',
+  bn: 'আমি আপনার কথা মনোযোগ দিয়ে শুনছি। আপনি আমার কাছে সম্পূর্ণ নিরাপদ। শান্ত হয়ে ধীরে ধীরে শ্বাস নিন।',
+  as: 'মই আপোনাৰ কথা মৰমেৰে শুনি আছোঁ। আপুনি মোৰ ওচৰত সম্পূৰ্ণ নিৰাপদ। শান্ত হৈ লাহে লাহে উশাহ লওক।',
+  mr: 'मी तुमचे बोलणे अगदी शांतपणे ऐकत आहे. तुम्ही माझ्यासोबत पूर्णपणे सुरक्षित आहात. एक दीर्घ श्वास घ्या.',
+  en: 'I hear you softly and clearly. You are completely safe with me. Let us take a peaceful, gentle breath together.'
+};
+
 class TherapyController {
   static async handleTherapySession(req, res) {
     try {
@@ -50,18 +97,20 @@ class TherapyController {
         return res.status(400).json({ error: 'Patient voice text is required' });
       }
 
+      const normLang = normalizeLanguageCode(language);
       const trimmed = message.trim();
       const lower = trimmed.toLowerCase();
 
-      // Greeting check
-      if (lower === 'start' || lower === 'hello' || lower === 'నమస్కారం' || lower === 'नमस्ते') {
-        const greeting = INITIAL_THERAPIST_GREETINGS[language] || INITIAL_THERAPIST_GREETINGS.en;
+      // Greeting checks across languages
+      const greetingTriggers = ['start', 'hello', 'hi', 'నమస్కారం', 'नमस्ते', 'வணக்கம்', 'ನಮಸ್ಕಾರ', 'নমস্কার', 'নমস্কাৰ', 'नमस्कार'];
+      if (greetingTriggers.some(g => lower === g || lower.startsWith(g))) {
+        const greeting = INITIAL_THERAPIST_GREETINGS[normLang] || INITIAL_THERAPIST_GREETINGS.en;
         return res.json({
           success: true,
           response: greeting,
-          language,
+          language: normLang,
           emotion: 'welcoming',
-          audioUrl: `/api/tts?text=${encodeURIComponent(greeting)}&lang=${language}`
+          audioUrl: `/api/tts?text=${encodeURIComponent(greeting)}&lang=${normLang}`
         });
       }
 
@@ -83,7 +132,7 @@ class TherapyController {
         en: 'English'
       };
 
-      const targetLangName = languageNames[language] || 'Telugu';
+      const targetLangName = languageNames[normLang] || 'Telugu';
 
       const prompt = `
 ${THERAPY_SYSTEM_PROMPT}
@@ -112,27 +161,17 @@ Be deeply comforting, respectful, and therapeutic. 2 to 3 sentences maximum. No 
           ? geminiRes
           : (geminiRes.rawText || (typeof geminiRes.data === 'string' ? geminiRes.data : JSON.stringify(geminiRes.data || '')));
 
-        replyText = raw.replace(/[*_#`]/g, '').trim();
+        replyText = raw.replace(/[*_#`~[\]]/g, '').trim();
       } catch (geminiErr) {
         console.warn('[TherapyController] Gemini fallback:', geminiErr.message);
-        const THERAPY_FALLBACKS = {
-          te: 'నేను మీ మాటలను శ్రద్ధగా వింటున్నాను అండీ. మీరు నాతో క్షేమంగా ఉన్నారు. కాసేపు ప్రశాంతంగా కళ్ళు మూసుకుని గాలి పీల్చుకోండి.',
-          hi: 'मैं आपकी बात बहुत ध्यान से सुन रही हूँ जी। आप मेरे साथ बिल्कुल सुरक्षित हैं। शांति से एक गहरी सांस लीजिए।',
-          ta: 'நான் உங்கள் குரலை கனிவுடன் கேட்கிறேன் அம்மா/ஐயா. நீங்கள் என்னுடன் பாதுகாப்பாக உள்ளீர்கள். மெதுவாக மூச்சை உள்ளிழுத்து வெளிவிடுங்கள்.',
-          kn: 'ನಾನು ನಿಮ್ಮ ಮಾತನ್ನು ಪ್ರೀತಿಯಿಂದ ಕೇಳುತ್ತಿದ್ದೇನೆ. ನೀವು ನನ್ನೊಂದಿಗೆ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದ್ದೀರಿ. ನಿಧಾನವಾಗಿ ಉಸಿರಾಡಿ.',
-          bn: 'আমি আপনার কথা মনোযোগ দিয়ে শুনছি। আপনি আমার কাছে সম্পূর্ণ নিরাপদ। শান্ত হয়ে ধীরে ধীরে শ্বাস নিন।',
-          as: 'মই আপোনাৰ কথা মৰমেৰে শুনি আছোঁ। আপুনি মোৰ ওচৰত সম্পূৰ্ণ নিৰাপদ। শান্ত হৈ লাহে লাহে উশাহ লওক।',
-          mr: 'मी तुमचे बोलणे अगदी शांतपणे ऐकत आहे. तुम्ही माझ्यासोबत पूर्णपणे सुरक्षित आहात. एक दीर्घ श्वास घ्या.',
-          en: 'I hear you softly and clearly. You are completely safe with me. Let us take a peaceful, gentle breath together.'
-        };
-        replyText = THERAPY_FALLBACKS[language] || THERAPY_FALLBACKS.en;
+        replyText = THERAPY_FALLBACKS[normLang] || THERAPY_FALLBACKS.en;
       }
 
       return res.json({
         success: true,
         response: replyText,
-        language,
-        audioUrl: `/api/tts?text=${encodeURIComponent(replyText.substring(0, 180))}&lang=${language}`
+        language: normLang,
+        audioUrl: `/api/tts?text=${encodeURIComponent(replyText.substring(0, 180))}&lang=${normLang}`
       });
     } catch (err) {
       console.error('[TherapyController] Exception:', err);
@@ -142,12 +181,13 @@ Be deeply comforting, respectful, and therapeutic. 2 to 3 sentences maximum. No 
 
   static getInitialGreeting(req, res) {
     const { lang = 'te' } = req.query;
-    const greeting = INITIAL_THERAPIST_GREETINGS[lang] || INITIAL_THERAPIST_GREETINGS.en;
+    const normLang = normalizeLanguageCode(lang);
+    const greeting = INITIAL_THERAPIST_GREETINGS[normLang] || INITIAL_THERAPIST_GREETINGS.en;
     res.json({
       success: true,
       greeting,
-      language: lang,
-      audioUrl: `/api/tts?text=${encodeURIComponent(greeting)}&lang=${lang}`
+      language: normLang,
+      audioUrl: `/api/tts?text=${encodeURIComponent(greeting)}&lang=${normLang}`
     });
   }
 }

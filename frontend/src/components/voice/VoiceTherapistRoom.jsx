@@ -47,6 +47,9 @@ const THERAPY_FOCUS_MODES = [
       hi: 'शांति और चिंता से राहत',
       ta: 'அமைதி & பதற்றம் தணிப்பு',
       kn: 'ಶಾಂತಿ & ಆತಂಕ ನಿವಾರಣೆ',
+      bn: 'শান্তি ও উদ্বেগ মুক্তি',
+      as: 'শান্তি আৰু উদ্বেগ নিবাৰণ',
+      mr: 'शांतता आणि चिंतामुक्ती',
       en: 'Calming & Anxiety Relief'
     }
   },
@@ -58,6 +61,9 @@ const THERAPY_FOCUS_MODES = [
       hi: 'सुखद पुरानी यादें',
       ta: 'இனிய பழைய நினைவுகள்',
       kn: 'ಮಧುರ ಹಳೆಯ ನೆನಪುಗಳು',
+      bn: 'মধুর শৈশবের স্মৃতি',
+      as: 'মধুৰ শৈশৱৰ স্মৃতি',
+      mr: 'सुखद जुन्या आठवणी',
       en: 'Cherished Reminiscence'
     }
   },
@@ -69,6 +75,9 @@ const THERAPY_FOCUS_MODES = [
       hi: 'आज की दिनचर्या व स्वास्थ्य',
       ta: 'இன்றைய நல்வாழ்வு',
       kn: 'ಇಂದಿನ ಕ್ಷೇಮ ಮತ್ತು ಆರೈಕೆ',
+      bn: 'দৈনন্দিন রুটিন ও স্বাস্থ্য',
+      as: 'দৈনন্দিন নিয়ম আৰু স্বাস্থ্য',
+      mr: 'दैनंदिन दिनचर्या आणि आरोग्य',
       en: 'Daily Presence & Health'
     }
   },
@@ -80,10 +89,35 @@ const THERAPY_FOCUS_MODES = [
       hi: 'गहरी नींद और विश्राम',
       ta: 'ஆழ்ந்த தூக்கம் & ஓய்வு',
       kn: 'ಗಾಢ ನಿದ್ರೆ ಮತ್ತು ವಿಶ್ರಾಂತಿ',
+      bn: 'গভীর ঘুম ও বিশ্রাম',
+      as: 'টোপনি আৰু জিৰণি',
+      mr: 'शांत झोप आणि विश्रांती',
       en: 'Sleep & Relaxation'
     }
   }
 ];
+
+const THERAPIST_FALLBACK_GREETINGS = {
+  te: 'నమస్కారం అండీ, నేను మీ థెరపిస్ట్ డాక్టర్ అనన్యను. ప్రశాంతంగా కూర్చుని నాతో మాట్లాడండి. ఈరోజు మీ మనసు ఎలా ఉంది?',
+  hi: 'नमस्ते जी, मैं आपकी थेरेपिस्ट डॉ. अनन्या हूँ। आराम से बैठिए और मुझसे बात कीजिए। आज आपका मन कैसा महसूस कर रहा है?',
+  ta: 'வணக்கம், நான் உங்கள் சிகிச்சையாளர் டாக்டர் அனன்யா. அமைதியாக அமர்ந்து என்னுடன் பேசுங்கள். இன்று உங்கள் மனம் எப்படி இருக்கிறது?',
+  kn: 'ನಮಸ್ಕಾರ, ನಾನು ನಿಮ್ಮ ಥೆರಪಿಸ್ಟ್ ಡಾ. ಅನನ್ಯಾ. ನಿರಾಳವಾಗಿ ಕುಳಿತು ನನ್ನೊಂದಿಗೆ ಮಾತನಾಡಿ. ಇಂದು ನಿಮ್ಮ ಮನಸ್ಸು ಹೇಗಿದೆ?',
+  bn: 'নমস্কার, আমি আপনার থেরাপিস্ট ডক্টর অনন্যা। শান্ত হয়ে বসুন এবং আমার সাথে কথা বলুন। আজ আপনার মন কেমন আছে?',
+  as: 'নমস্কাৰ, মই আপোনাৰ থেৰাপিষ্ট ডাঃ অনন্যা। শান্ত হৈ বহক আৰু মোৰ লগত কথা পাতক। আজি আপোনাৰ মনটো কেনে আছে?',
+  mr: 'नमस्कार, मी तुमची थेरपिस्ट डॉ. अनन्या आहे. शांत बसा आणि माझ्याशी बोला. आज तुमचे मन कसे आहे?',
+  en: 'Hello my dear friend, I am your therapist Dr. Ananya. Sit back comfortably and talk with me. How are you feeling today?'
+};
+
+const THERAPIST_FALLBACK_REPLIES = {
+  te: 'నేను మీ మాటలను శ్రద్ధగా వింటున్నాను అండీ. మీరు నాతో క్షేమంగా ఉన్నారు. కాసేపు ప్రశాంతంగా కళ్ళు మూసుకుని గాలి పీల్చుకోండి.',
+  hi: 'मैं आपकी बात बहुत ध्यान से सुन रही हूँ जी। आप मेरे साथ बिल्कुल सुरक्षित हैं। शांति से एक गहरी सांस लीजिए।',
+  ta: 'நான் உங்கள் குரலை கனிவுடன் கேட்கிறேன் அம்மா/ஐயா. நீங்கள் என்னுடன் பாதுகாப்பாக உள்ளீர்கள். மெதுவாக மூச்சை உள்ளிழுத்து வெளிவிடுங்கள்.',
+  kn: 'ನಾನು ನಿಮ್ಮ ಮಾತನ್ನು ಪ್ರೀತಿಯಿಂದ ಕೇಳುತ್ತಿದ್ದೇನೆ. ನೀವು ನನ್ನೊಂದಿಗೆ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದ್ದೀರಿ. ನಿಧಾನವಾಗಿ ಉಸಿರಾಡಿ.',
+  bn: 'আমি আপনার কথা মনোযোগ দিয়ে শুনছি। আপনি আমার কাছে সম্পূর্ণ নিরাপদ। শান্ত হয়ে ধীরে ধীরে শ্বাস নিন।',
+  as: 'মই আপোনাৰ কথা মৰমেৰে শুনি আছোঁ। আপুনি মোৰ ওচৰত সম্পূৰ্ণ নিৰাপদ। শান্ত হৈ লাহে লাহে উশাহ লওক।',
+  mr: 'मी तुमचे बोलणे अगदी शांतपणे ऐकत आहे. तुम्ही माझ्यासोबत पूर्णपणे सुरक्षित आहात. एक दीर्घ श्वास घ्या.',
+  en: 'I hear you softly and clearly. You are completely safe with me. Let us take a peaceful, gentle breath together.'
+};
 
 export const VoiceTherapistRoom = ({ isOpen, onClose }) => {
   const { lang, changeLanguage } = useLanguage();
@@ -228,9 +262,7 @@ export const VoiceTherapistRoom = ({ isOpen, onClose }) => {
       }
     } catch (e) {
       console.warn('[VoiceTherapist] Greeting fallback:', e);
-      const fallback = selectedLang === 'te'
-        ? 'నమస్కారం అండీ, నేను మీ థెరపిస్ట్ డాక్టర్ అనన్యను. ప్రశాంతంగా కూర్చుని నాతో మాట్లాడండి.'
-        : 'Hello dear friend, I am Dr. Ananya. Sit comfortably and speak with me.';
+      const fallback = THERAPIST_FALLBACK_GREETINGS[selectedLang] || THERAPIST_FALLBACK_GREETINGS.en;
       setLastTherapistSpeech(fallback);
       speakTherapistTurn(fallback);
     }
@@ -266,9 +298,7 @@ export const VoiceTherapistRoom = ({ isOpen, onClose }) => {
       }
     } catch (e) {
       console.warn('[VoiceTherapist] Reply error:', e);
-      const fallback = selectedLang === 'te'
-        ? 'నేను మీ మాటలను శ్రద్ధగా వింటున్నాను అండీ. మీరు క్షేమంగా ఉన్నారు. నెమ్మదిగా ఊపిరి పీల్చుకోండి.'
-        : 'I hear your voice softly and clearly. You are completely safe with me. Take a gentle breath.';
+      const fallback = THERAPIST_FALLBACK_REPLIES[selectedLang] || THERAPIST_FALLBACK_REPLIES.en;
       setLastTherapistSpeech(fallback);
       speakTherapistTurn(fallback);
     }
