@@ -129,6 +129,7 @@ class TTSController {
       const normalizedLangKey = (lang || 'en').toLowerCase().trim();
       const prefix = normalizedLangKey.split('-')[0].split('_')[0];
       const targetLang = GOOGLE_TTS_LANG_MAP[normalizedLangKey] || GOOGLE_TTS_LANG_MAP[prefix] || 'en';
+      const cacheKey = `${targetLang}:${cleanText}`;
 
       // Set dynamic CORS headers compatible with credentials
       if (!res.headersSent) {

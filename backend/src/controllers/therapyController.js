@@ -164,7 +164,25 @@ Be deeply comforting, respectful, and therapeutic. 2 to 3 sentences maximum. No 
         replyText = raw.replace(/[*_#`~[\]]/g, '').trim();
       } catch (geminiErr) {
         console.warn('[TherapyController] Gemini fallback:', geminiErr.message);
-        replyText = THERAPY_FALLBACKS[normLang] || THERAPY_FALLBACKS.en;
+
+        if (focusMode === 'sleep') {
+          if (normLang === 'te') replyText = 'ప్రశాంతంగా కళ్ళు మూసుకుని మెల్లగా గాలి తీసుకోండి. రాత్రి సమయం మీ శరీరం, మనస్సుకు విశ్రాంతినిస్తుంది.';
+          else if (normLang === 'hi') replyText = 'धीरे-धीरे एक गहरी सांस लें। रात का समय आपके शरीर और दिमाग को विश्राम देने के लिए है।';
+          else replyText = 'Close your eyes gently and take a slow, relaxing breath. You are safe and peaceful tonight.';
+        } else if (focusMode === 'reminiscence') {
+          if (normLang === 'te') replyText = 'మీ సుందర జ్ఞాపకాలు ఎంతో మధురమైనవి. మీ చిన్ననాటి విషయాలు నాతో పంచుకున్నందుకు ధన్యవాదాలు.';
+          else if (normLang === 'hi') replyText = 'आपकी सुंदर यादें बहुत सुखद हैं। अपनी पुरानी यादें साझा करने के लिए धन्यवाद।';
+          else replyText = 'Your memories are precious and wonderful. Thank you for sharing these moments with me.';
+        } else {
+          if (normLang === 'te') replyText = `నేను మీ మాటలని శ్రద్ధగా వింటున్నాను అండీ. "${trimmed}" గురించి మీరు చెప్పిన విధానం చాలా బాగుంది. మీరు నా వద్ద సురక్షితంగా ఉన్నారు.`;
+          else if (normLang === 'hi') replyText = `मैं आपकी बात बहुत ध्यान से सुन रही हूँ जी। "${trimmed}" के बारे में आपकी बात बहुत अच्छी लगी। आप बिल्कुल सुरक्षित हैं।`;
+          else if (normLang === 'ta') replyText = `நான் உங்கள் குரலை கனிவுடன் கேட்கிறேன். நீங்கள் என்னுடன் பாதுகாப்பாக உள்ளீர்கள்.`;
+          else if (normLang === 'kn') replyText = `ನಾನು ನಿಮ್ಮ ಮಾತನ್ನು ಪ್ರೀತಿಯಿಂದ ಕೇಳುತ್ತಿದ್ದೇನೆ. ನೀವು ನನ್ನೊಂದಿಗೆ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದ್ದೀರಿ.`;
+          else if (normLang === 'bn') replyText = `আমি আপনার কথা মনোযোগ দিয়ে শুনছি। আপনি আমার কাছে সম্পূর্ণ নিরাপদ।`;
+          else if (normLang === 'as') replyText = `মই আপোনাৰ কথা মৰমেৰে শুনি আছোঁ। আপুনি মোৰ ওচৰত নিৰাপদ।`;
+          else if (normLang === 'mr') replyText = `मी तुमचे बोलणे अगदी शांतपणे ऐकत आहे. तुम्ही माझ्यासोबत सुरक्षित आहात.`;
+          else replyText = `I hear you softly and clearly regarding "${trimmed}". You are completely safe with me. Let us take a gentle breath together.`;
+        }
       }
 
       return res.json({
