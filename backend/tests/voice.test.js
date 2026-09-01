@@ -28,17 +28,15 @@ test('GET /api/tts should return HTTP 200 and audio buffer for regional language
   assert.ok(arrayBuffer.byteLength > 0, 'Audio buffer should not be empty');
 });
 
-test('POST /api/voice-agent/chat should return unique contextual responses for different questions', async () => {
-  const questions = [
-    { text: 'నేను ఇప్పుడు నీళ్లు తాగాలా?', lang: 'te' },
-    { text: 'నాకు తలనొప్పిగా ఉంది, ఏమి చేయాలి?', lang: 'te' },
-    { text: 'ज्ञापकशक्ति बढ़ाने के लिए क्या करें?', lang: 'hi' },
-    { text: 'What is my medicine schedule for morning?', lang: 'en' }
+test('POST /api/voice-agent/chat should return unique contextual responses for Romanized Indian queries', async () => {
+  const romanizedQueries = [
+    { text: 'naku emmi gurthundatledhu', lang: 'te' },
+    { text: 'nenu ipudu em cheyali', lang: 'te' }
   ];
 
   const responses = [];
 
-  for (const q of questions) {
+  for (const q of romanizedQueries) {
     const res = await fetch(`${baseUrl}/api/voice-agent/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -47,13 +45,12 @@ test('POST /api/voice-agent/chat should return unique contextual responses for d
     assert.strictEqual(res.status, 200);
     const data = await res.json();
     assert.strictEqual(data.success, true);
-    assert.ok(data.response && data.response.length > 0);
+    assert.ok(data.response && data.response.length > 10);
+    assert.strictEqual(data.response.includes(q.text), false, 'Response should not just repeat user query verbatim');
     responses.push(data.response);
   }
 
-  // Ensure responses are not all identical
-  const uniqueResponses = new Set(responses);
-  assert.ok(uniqueResponses.size > 1, 'Voice assistant should provide unique responses for different topics');
+  assert.notStrictEqual(responses[0], responses[1], 'Different Romanized queries must receive distinct answers');
 });
 
 test('POST /api/therapy/chat should handle therapy session and return audioUrl', async () => {
