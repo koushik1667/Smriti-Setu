@@ -130,11 +130,17 @@ class TTSController {
       const prefix = normalizedLangKey.split('-')[0].split('_')[0];
       const targetLang = GOOGLE_TTS_LANG_MAP[normalizedLangKey] || GOOGLE_TTS_LANG_MAP[prefix] || 'en';
 
-      const cacheKey = `${targetLang}:${cleanText}`;
-
-      // Set CORS headers so audio can be streamed anywhere
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      // Set dynamic CORS headers compatible with credentials
+      if (!res.headersSent) {
+        const origin = req.headers?.origin || '*';
+        if (origin !== '*') {
+          res.setHeader('Access-Control-Allow-Origin', origin);
+          res.setHeader('Access-Control-Allow-Credentials', 'true');
+        } else {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+        }
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      }
 
       // If cached in memory, return immediately
       if (audioCache.has(cacheKey)) {
