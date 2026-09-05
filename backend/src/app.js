@@ -13,6 +13,8 @@ const authRoutes = require('./routes/authRoutes');
 const visionRoutes = require('./routes/visionRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const cognitiveRoutes = require('./routes/cognitiveRoutes');
+const documentRoutes = require('./routes/documentRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 let app;
@@ -117,10 +119,11 @@ if (express) {
   app.use('/api/analyze-dual-audit', aiLimiter);
   app.use('/api/vision/chat', aiLimiter);
 
-
   app.use('/api/auth', authRoutes);
   app.use('/api', visionRoutes);
   app.use('/api', historyRoutes);
+  app.use('/api/documents', documentRoutes);
+  app.use('/api/chats', chatRoutes);
   app.use('/api/cognitive', cognitiveRoutes);
   app.use(errorHandler);
 } else {
@@ -143,6 +146,14 @@ if (express) {
 
     { method: 'GET', path: '/api/history', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/historyController').getHistory },
     { method: 'DELETE', path: '/api/history/:id', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/historyController').deleteHistoryItem },
+    { method: 'GET', path: '/api/documents', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/documentController').getDocuments },
+    { method: 'GET', path: '/api/documents/:id', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/documentController').getDocumentById },
+    { method: 'POST', path: '/api/documents', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/documentController').createDocument },
+    { method: 'DELETE', path: '/api/documents/:id', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/documentController').deleteDocument },
+    { method: 'GET', path: '/api/chats', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/chatController').getChatHistory },
+    { method: 'GET', path: '/api/chats/sessions', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/chatController').getRecentSessions },
+    { method: 'POST', path: '/api/chats', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/chatController').saveChatMessage },
+    { method: 'DELETE', path: '/api/chats/:sessionId', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/chatController').clearChatHistory },
     { method: 'POST', path: '/api/cognitive/sync', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/cognitiveController').batchSync },
     { method: 'GET', path: '/api/cognitive/caregiver-analytics', middleware: require('./middleware/auth').optionalAuth, handler: require('./controllers/cognitiveController').getCaregiverAnalytics },
     { method: 'POST', path: '/api/translate', handler: require('./controllers/translationController').translateText },

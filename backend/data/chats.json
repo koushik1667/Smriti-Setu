@@ -1,0 +1,28 @@
+[
+  {
+    "id": "msg_1788622843435_nk5ifuf",
+    "created_at": "2026-09-05T15:40:43.435Z",
+    "updated_at": "2026-09-05T15:40:43.435Z",
+    "user_id": "anonymous",
+    "session_id": "voice_therapist_default",
+    "chat_type": "voice_therapist",
+    "role": "assistant",
+    "text": "I hear you, and it is completely alright to feel a little anxious sometimes. Let us take a slow, deep breath together right now, breathing in peace and letting your shoulders rest. You are very safe, you are so loved, and I am right here with you.",
+    "language": "en",
+    "audio_url": "",
+    "metadata": {}
+  },
+  {
+    "id": "msg_1788622833553_yjcjjpa",
+    "created_at": "2026-09-05T15:40:33.553Z",
+    "updated_at": "2026-09-05T15:40:33.553Z",
+    "user_id": "anonymous",
+    "session_id": "voice_therapist_default",
+    "chat_type": "voice_therapist",
+    "role": "user",
+    "text": "I feel a bit anxious today",
+    "language": "en",
+    "audio_url": "",
+    "metadata": {}
+  }
+]

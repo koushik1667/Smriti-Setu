@@ -8,6 +8,7 @@
  */
 
 const { generateWithFailover } = require('../services/geminiKeyManager');
+const Chat = require('../models/Chat');
 
 const NORM_LANG_MAP = {
   te: 'te',
@@ -185,10 +186,35 @@ Be deeply comforting, respectful, and therapeutic. 2 to 3 sentences maximum. No 
         }
       }
 
+      // Persist conversation turns to durable Chat database
+      const userId = req.user ? req.user.id : (req.body.userId || 'anonymous');
+      const sessionId = req.body.sessionId || 'voice_therapist_default';
+      try {
+        await Chat.createMessage({
+          userId,
+          sessionId,
+          chatType: 'voice_therapist',
+          role: 'user',
+          text: trimmed,
+          language: normLang
+        });
+        await Chat.createMessage({
+          userId,
+          sessionId,
+          chatType: 'voice_therapist',
+          role: 'assistant',
+          text: replyText,
+          language: normLang
+        });
+      } catch (chatErr) {
+        console.warn('[Therapy Chat Save Warning]:', chatErr.message);
+      }
+
       return res.json({
         success: true,
         response: replyText,
         language: normLang,
+        sessionId,
         audioUrl: `/api/tts?text=${encodeURIComponent(replyText.substring(0, 180))}&lang=${normLang}`
       });
     } catch (err) {

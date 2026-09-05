@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { generateWithFailover } = require('../services/geminiKeyManager');
 const ScanHistory = require('../models/ScanHistory');
+const Document = require('../models/Document');
 
 const PRESCRIPTION_SYSTEM_PROMPT = `
 You are PharmaVision AI's Senior Clinical Pharmacologist and Prescription Digitization Specialist.
@@ -110,9 +111,32 @@ async function analyzePrescription(req, res, next) {
       });
     }
 
+    // Automatically persist analyzed prescription to durable Document database
+    let savedDocument = null;
+    try {
+      const userId = req.user ? req.user.id : (req.body.userId || 'anonymous');
+      savedDocument = await Document.create({
+        userId,
+        documentType: 'prescription',
+        title: prescriptionData.doctorInfo?.clinicOrHospital 
+          ? `Prescription - ${prescriptionData.doctorInfo.clinicOrHospital}` 
+          : `Doctor Prescription - ${new Date().toLocaleDateString()}`,
+        summary: prescriptionData.prescriptionSummary || '',
+        doctorInfo: prescriptionData.doctorInfo || {},
+        medicines: prescriptionData.medicines || [],
+        drugInteractions: prescriptionData.drugInteractions || [],
+        generalPrecautions: prescriptionData.generalPrecautions || [],
+        rawAnalysis: prescriptionData,
+        thumbnail: fileBase64.length < 500000 ? fileBase64 : ''
+      });
+    } catch (docErr) {
+      console.warn('[Prescription Auto-Save Warning]:', docErr.message);
+    }
+
     return res.json({
       success: true,
-      data: prescriptionData
+      data: prescriptionData,
+      documentId: savedDocument ? savedDocument.id : null
     });
   } catch (error) {
     next(error);

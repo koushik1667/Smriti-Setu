@@ -253,11 +253,34 @@ export const VoiceTherapistRoom = ({ isOpen, onClose }) => {
   const fetchInitialGreeting = async () => {
     setLoopState('thinking');
     try {
+      // First, attempt to load recent saved chat history from durable database
+      try {
+        const histRes = await fetch('/api/chats?sessionId=dr_ananya_therapist&limit=20');
+        if (histRes.ok) {
+          const histData = await histRes.json();
+          if (histData.messages && histData.messages.length > 0) {
+            const mapped = histData.messages.map(m => ({
+              role: m.role === 'assistant' ? 'therapist' : 'patient',
+              text: m.text
+            }));
+            setSessionHistory(mapped);
+            const lastMsg = histData.messages[histData.messages.length - 1];
+            if (lastMsg.role === 'assistant') {
+              setLastTherapistSpeech(lastMsg.text);
+              speakTherapistTurn(lastMsg.text);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[VoiceTherapist] DB history load notice:', err.message);
+      }
+
       const res = await fetch(`/api/therapy/greeting?lang=${selectedLang}`);
       if (res.ok) {
         const data = await res.json();
         setLastTherapistSpeech(data.greeting);
-        setSessionHistory([{ role: 'therapist', text: data.greeting }]);
+        setSessionHistory(prev => (prev.length > 0 ? prev : [{ role: 'therapist', text: data.greeting }]));
         speakTherapistTurn(data.greeting);
       }
     } catch (e) {
@@ -280,6 +303,7 @@ export const VoiceTherapistRoom = ({ isOpen, onClose }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          sessionId: 'dr_ananya_therapist',
           message: spokenText,
           language: selectedLang,
           focusMode,

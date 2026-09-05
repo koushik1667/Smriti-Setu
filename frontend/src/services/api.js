@@ -196,6 +196,30 @@ export const api = {
     return res;
   },
 
+  // Scanned Documents (Prescriptions, Lab Reports, Dual Audits)
+  getDocuments: (type = null) => {
+    const query = type ? `?type=${encodeURIComponent(type)}` : '';
+    return request(`/documents${query}`);
+  },
+  getDocumentById: (id) => request(`/documents/${id}`),
+  saveDocument: (docData) => request('/documents', {
+    method: 'POST',
+    body: JSON.stringify(docData)
+  }),
+  deleteDocument: (id) => request(`/documents/${id}`, { method: 'DELETE' }),
+
+  // Persistent AI & Voice Chats
+  getChatHistory: (sessionId = 'default') => request(`/chats?sessionId=${encodeURIComponent(sessionId)}`),
+  getChatSessions: (chatType = null) => {
+    const query = chatType ? `?chatType=${encodeURIComponent(chatType)}` : '';
+    return request(`/chats/sessions${query}`);
+  },
+  saveChatMessage: (chatData) => request('/chats', {
+    method: 'POST',
+    body: JSON.stringify(chatData)
+  }),
+  clearChatHistory: (sessionId) => request(`/chats/${sessionId}`, { method: 'DELETE' }),
+
   // Health Check & Wake-Up Ping for Render Free Tier
   checkHealth: () => request('/health'),
   warmUpBackend: async () => {

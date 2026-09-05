@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileText, Upload, AlertTriangle, ArrowRight, Pill, Activity, Stethoscope, Layers, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Upload, AlertTriangle, ArrowRight, Pill, Activity, Stethoscope, Layers, Sparkles, Clock, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { ReportResultCard } from '../components/ReportResultCard';
@@ -10,6 +10,18 @@ import { LiveAnalysisStepper } from '../components/LiveAnalysisStepper';
 export const ReportAnalyzer = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('dual'); // 'dual', 'prescription', 'lab'
+  const [savedDocs, setSavedDocs] = useState([]);
+
+  const loadSavedDocs = async () => {
+    try {
+      const res = await api.getDocuments();
+      setSavedDocs(res.documents || []);
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadSavedDocs();
+  }, []);
 
   // Dual Audit State
   const [dualLabFile, setDualLabFile] = useState(null);
@@ -107,6 +119,7 @@ export const ReportAnalyzer = () => {
     try {
       const res = await api.analyzePrescription(rxFileBase64, rxMimeType);
       setRxResult(res.data);
+      loadSavedDocs();
     } catch (err) {
       setRxError(err.message || 'Prescription analysis failed.');
     } finally {
@@ -138,6 +151,7 @@ export const ReportAnalyzer = () => {
     try {
       const res = await api.analyzeReport(labFileBase64, labMimeType);
       setLabResult(res.data);
+      loadSavedDocs();
     } catch (err) {
       setLabError(err.message || 'Lab report analysis failed.');
     } finally {

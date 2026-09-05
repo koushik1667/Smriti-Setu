@@ -7,6 +7,7 @@ try {
   OpenAI = null;
 }
 const ScanHistory = require('../models/ScanHistory');
+const Document = require('../models/Document');
 
 const REPORT_SYSTEM_PROMPT = `
 You are PharmaVision AI's Senior Clinical Diagnostic & Lab Report Specialist.
@@ -146,10 +147,36 @@ async function analyzeReport(req, res, next) {
       }
     }
 
+    // Automatically persist analyzed lab report to durable Document database
+    let savedDocument = null;
+    try {
+      savedDocument = await Document.create({
+        userId,
+        documentType: 'lab_report',
+        title: reportAnalysis.reportType 
+          ? `Lab Report - ${reportAnalysis.reportType}` 
+          : `Diagnostic Report - ${new Date().toLocaleDateString()}`,
+        summary: reportAnalysis.clinicalSummary || '',
+        doctorInfo: { labName: reportAnalysis.reportType || 'Clinical Laboratory' },
+        patientInfo: {
+          patientName: reportAnalysis.patientName || '',
+          sampleDate: reportAnalysis.sampleDate || ''
+        },
+        biomarkers: reportAnalysis.testResults || [],
+        criticalFindings: reportAnalysis.criticalFindings || [],
+        generalPrecautions: reportAnalysis.dietaryLifestyleAdvice || [],
+        rawAnalysis: reportAnalysis,
+        thumbnail: fileBase64.length < 500000 ? fileBase64 : ''
+      });
+    } catch (docErr) {
+      console.warn('[Report Auto-Save Warning]:', docErr.message);
+    }
+
     return res.json({
       success: true,
       data: {
         ...reportAnalysis,
+        documentId: savedDocument ? savedDocument.id : null,
         cabinetMatching: {
           scannedCabinetSize: userScannedCabinet.length,
           matchedCabinet,

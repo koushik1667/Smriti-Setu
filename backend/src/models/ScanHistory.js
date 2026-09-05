@@ -1,6 +1,8 @@
+const { getCollection } = require('../config/durableStorage');
 const { getSupabaseClient } = require('../config/supabase');
 
-const localHistory = [];
+const scanCollection = getCollection('scans');
+
 // In-memory cache per user for lightning-fast repeat queries
 const userCache = new Map();
 
@@ -19,12 +21,12 @@ class ScanHistory {
 
     const record = {
       id,
-      user_id: userId,
+      user_id: userId || 'anonymous',
       medication_name: medicationName,
       primary_use: primaryUse,
       dosage_instructions: dosageInstructions,
-      warnings,
-      active_ingredients: activeIngredients,
+      warnings: warnings || [],
+      active_ingredients: activeIngredients || [],
       image_thumbnail: imageThumbnail || '',
       raw_analysis: rawAnalysis || '',
       created_at: createdAt
@@ -32,22 +34,28 @@ class ScanHistory {
 
     invalidateUserCache(userId);
 
+    // 1. Save to durable persistent disk database
+    const saved = scanCollection.insert(record);
+
+    // 2. Sync to Supabase if available
     const supabase = getSupabaseClient();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('scan_history')
-        .insert([record])
-        .select()
-        .single();
-      
-      if (!error && data) {
-        return ScanHistory.mapRecord(data);
+      try {
+        const { data, error } = await supabase
+          .from('scan_history')
+          .insert([record])
+          .select()
+          .single();
+        
+        if (!error && data) {
+          return ScanHistory.mapRecord(data);
+        }
+      } catch (err) {
+        console.warn('[ScanHistory] Supabase sync notice:', err.message);
       }
     }
 
-    // Local fallback
-    localHistory.unshift(record);
-    return ScanHistory.mapRecord(record);
+    return ScanHistory.mapRecord(saved);
   }
 
   static async createBatch(records = []) {
@@ -56,7 +64,7 @@ class ScanHistory {
     const now = Date.now();
     const formattedRecords = records.map((rec, idx) => ({
       id: 'scan_' + (now + idx) + '_' + Math.random().toString(36).substring(2, 9),
-      user_id: rec.userId,
+      user_id: rec.userId || 'anonymous',
       medication_name: rec.medicationName,
       primary_use: rec.primaryUse,
       dosage_instructions: rec.dosageInstructions,
@@ -71,21 +79,26 @@ class ScanHistory {
       invalidateUserCache(records[0].userId);
     }
 
+    // Save batch to durable storage
+    const savedList = scanCollection.insertBatch(formattedRecords);
+
     const supabase = getSupabaseClient();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('scan_history')
-        .insert(formattedRecords)
-        .select();
+      try {
+        const { data, error } = await supabase
+          .from('scan_history')
+          .insert(formattedRecords)
+          .select();
 
-      if (!error && data) {
-        return data.map(ScanHistory.mapRecord);
+        if (!error && data) {
+          return data.map(ScanHistory.mapRecord);
+        }
+      } catch (err) {
+        console.warn('[ScanHistory] Supabase batch sync notice:', err.message);
       }
     }
 
-    // Local fallback
-    formattedRecords.forEach(rec => localHistory.unshift(rec));
-    return formattedRecords.map(ScanHistory.mapRecord);
+    return savedList.map(ScanHistory.mapRecord);
   }
 
   static async findByUserId(userId, limit = null) {
@@ -98,31 +111,32 @@ class ScanHistory {
     }
 
     const supabase = getSupabaseClient();
-    let results = [];
-
     if (supabase) {
-      let query = supabase
-        .from('scan_history')
-        .select('id, user_id, medication_name, primary_use, dosage_instructions, warnings, active_ingredients, image_thumbnail, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      try {
+        let query = supabase
+          .from('scan_history')
+          .select('id, user_id, medication_name, primary_use, dosage_instructions, warnings, active_ingredients, image_thumbnail, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
-      if (limit && Number.isInteger(limit)) {
-        query = query.limit(limit);
-      }
+        if (limit && Number.isInteger(limit)) {
+          query = query.limit(limit);
+        }
 
-      const { data, error } = await query;
+        const { data, error } = await query;
 
-      if (!error && data) {
-        results = data.map(ScanHistory.mapRecord);
-        userCache.set(cacheKey, { data: results, timestamp: now });
-        return results;
-      }
+        if (!error && data && data.length > 0) {
+          const results = data.map(ScanHistory.mapRecord);
+          userCache.set(cacheKey, { data: results, timestamp: now });
+          return results;
+        }
+      } catch (err) {}
     }
 
-    // Local fallback filter
-    const items = localHistory.filter(item => item.user_id === userId);
-    results = (limit && Number.isInteger(limit) ? items.slice(0, limit) : items)
+    // Durable fallback query (includes user's scans or anonymous scans if applicable)
+    const items = scanCollection.find(item => !userId || item.user_id === userId || item.user_id === 'anonymous');
+    const sorted = items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const results = (limit && Number.isInteger(limit) ? sorted.slice(0, limit) : sorted)
       .map(ScanHistory.mapRecord);
     
     userCache.set(cacheKey, { data: results, timestamp: now });
@@ -134,18 +148,17 @@ class ScanHistory {
     const supabase = getSupabaseClient();
 
     if (supabase) {
-      const { error } = await supabase
-        .from('scan_history')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', userId);
-      return !error;
+      try {
+        await supabase
+          .from('scan_history')
+          .delete()
+          .eq('id', id);
+      } catch (err) {}
     }
 
-    const index = localHistory.findIndex(item => item.id === id && item.user_id === userId);
-    if (index !== -1) {
-      localHistory.splice(index, 1);
-      return true;
+    const item = scanCollection.findById(id);
+    if (item && (!userId || item.user_id === userId || item.user_id === 'anonymous')) {
+      return scanCollection.delete(id);
     }
     return false;
   }
