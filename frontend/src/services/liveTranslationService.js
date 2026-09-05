@@ -71,10 +71,16 @@ class LiveTranslationService {
     this.currentLang = langCode;
 
     // Set Google translate cookie for persistent page loads
-    const cookieVal = langCode === 'en' ? '' : `/en/${langCode}`;
-    const expires = langCode === 'en' ? 'expires=Thu, 01 Jan 1970 00:00:00 UTC;' : '';
-    document.cookie = `googtrans=${cookieVal}; path=/; ${expires}`;
-    document.cookie = `googtrans=${cookieVal}; path=/; domain=.${window.location.hostname}; ${expires}`;
+    if (langCode === 'en') {
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+    } else {
+      const cookieVal = `/en/${langCode}`;
+      document.cookie = `googtrans=${cookieVal}; path=/;`;
+      document.cookie = `googtrans=${cookieVal}; path=/; domain=.${window.location.hostname};`;
+      document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname};`;
+    }
 
     // Trigger select element in Google Translate iframe/combo
     const combo = document.querySelector('.goog-te-combo');

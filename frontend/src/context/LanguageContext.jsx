@@ -1333,16 +1333,24 @@ export const LanguageProvider = ({ children }) => {
   };
 
   const changeLanguage = (newLang) => {
+    if (newLang === lang && typeof window !== 'undefined') {
+      return;
+    }
     setLang(newLang);
     localStorage.setItem('pharmavision_lang', newLang);
     applyDomLanguage(newLang);
 
-    // Trigger full DOM live translation engine
+    // Trigger full DOM live translation engine & cookies
     liveTranslationService.triggerDomTranslation(newLang);
 
-    // Dispatch custom events so every active component re-renders/reacts immediately
+    // Dispatch custom events
     window.dispatchEvent(new CustomEvent('languageChange', { detail: { lang: newLang } }));
     window.dispatchEvent(new Event('storage'));
+
+    // Automatically reload page for clean translation render
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   useEffect(() => {
