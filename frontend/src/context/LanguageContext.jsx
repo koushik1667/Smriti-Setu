@@ -1333,21 +1333,22 @@ export const LanguageProvider = ({ children }) => {
   };
 
   const changeLanguage = (newLang) => {
-    if (newLang === lang && typeof window !== 'undefined') {
-      return;
+    try {
+      setLang(newLang);
+      localStorage.setItem('pharmavision_lang', newLang);
+      applyDomLanguage(newLang);
+
+      // Trigger full DOM live translation engine & cookies
+      liveTranslationService.triggerDomTranslation(newLang);
+
+      // Dispatch custom events
+      window.dispatchEvent(new CustomEvent('languageChange', { detail: { lang: newLang } }));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      console.warn('Language update error:', err);
     }
-    setLang(newLang);
-    localStorage.setItem('pharmavision_lang', newLang);
-    applyDomLanguage(newLang);
 
-    // Trigger full DOM live translation engine & cookies
-    liveTranslationService.triggerDomTranslation(newLang);
-
-    // Dispatch custom events
-    window.dispatchEvent(new CustomEvent('languageChange', { detail: { lang: newLang } }));
-    window.dispatchEvent(new Event('storage'));
-
-    // Automatically reload page for clean translation render
+    // Unconditionally reload page immediately
     if (typeof window !== 'undefined') {
       window.location.reload();
     }

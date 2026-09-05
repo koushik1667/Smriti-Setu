@@ -60,6 +60,17 @@ class LiveTranslationService {
     script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
     script.async = true;
     document.body.appendChild(script);
+
+    // Listen for any native Google Translate combo change event
+    document.addEventListener('change', (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains('goog-te-combo')) {
+        const val = e.target.value;
+        if (val && val !== localStorage.getItem('pharmavision_lang')) {
+          localStorage.setItem('pharmavision_lang', val);
+          window.location.reload();
+        }
+      }
+    });
   }
 
   /**
