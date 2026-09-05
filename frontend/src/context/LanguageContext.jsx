@@ -1334,22 +1334,28 @@ export const LanguageProvider = ({ children }) => {
 
   const changeLanguage = (newLang) => {
     try {
-      setLang(newLang);
       localStorage.setItem('pharmavision_lang', newLang);
-      applyDomLanguage(newLang);
+      
+      // Configure translation cookies before full tab reload
+      if (newLang === 'en') {
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+      } else {
+        const cookieVal = `/en/${newLang}`;
+        document.cookie = `googtrans=${cookieVal}; path=/;`;
+        document.cookie = `googtrans=${cookieVal}; path=/; domain=.${window.location.hostname};`;
+        document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname};`;
+      }
 
-      // Trigger full DOM live translation engine & cookies
       liveTranslationService.triggerDomTranslation(newLang);
-
-      // Dispatch custom events
-      window.dispatchEvent(new CustomEvent('languageChange', { detail: { lang: newLang } }));
-      window.dispatchEvent(new Event('storage'));
     } catch (err) {
       console.warn('Language update error:', err);
     }
 
-    // Unconditionally reload page immediately
+    // Force hard reload of the entire tab
     if (typeof window !== 'undefined') {
+      window.location.href = window.location.href;
       window.location.reload();
     }
   };

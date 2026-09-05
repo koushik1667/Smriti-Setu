@@ -36,8 +36,12 @@ export const LanguageSelector = ({ direction = 'down', align = 'right', style = 
   }, []);
 
   const handleSelect = (code) => {
-    changeLanguage(code);
     setIsOpen(false);
+    changeLanguage(code);
+    if (typeof window !== 'undefined') {
+      window.location.href = window.location.href;
+      window.location.reload();
+    }
   };
 
   const isUp = direction === 'up';
