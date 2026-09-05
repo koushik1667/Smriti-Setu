@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { AppLayout } from './components/AppLayout';
+import { api } from './services/api';
 
 // Auth pages
 import { Login }    from './pages/Login';
@@ -38,11 +39,25 @@ const ProtectedRoute = ({ children }) => {
 };
 
 export function App() {
+  // Silent Render backend warm-up & keep-alive ping
+  useEffect(() => {
+    // 1. Initial warm-up ping on mount
+    api.warmUpBackend();
+
+    // 2. Periodic keep-alive ping every 8 minutes while user has tab open
+    const interval = setInterval(() => {
+      api.warmUpBackend();
+    }, 8 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <LanguageProvider>
       <AuthProvider>
         <Router>
           <Routes>
+
             {/* Auth — no sidebar */}
             <Route path="/login"    element={<Login />} />
             <Route path="/register" element={<Register />} />

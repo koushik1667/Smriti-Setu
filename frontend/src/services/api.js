@@ -196,5 +196,20 @@ export const api = {
     return res;
   },
 
+  // Health Check & Wake-Up Ping for Render Free Tier
+  checkHealth: () => request('/health'),
+  warmUpBackend: async () => {
+    try {
+      const base = getApiBaseUrl();
+      const res = await fetch(`${base}/health`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  },
+
   invalidateHistoryCache
 };

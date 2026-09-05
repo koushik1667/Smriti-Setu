@@ -58,7 +58,7 @@ export const Sidebar = () => {
             <Pill size={18} color="#fff" />
           </div>
           <div className="sidebar-brand-text">
-            <h2>{t('appName')}</h2>
+            <h2 className="notranslate" translate="no">{t('appName')}</h2>
             <p>{t('tagline')}</p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export const Sidebar = () => {
             <div className="sidebar-logo" style={{ width: '28px', height: '28px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(103, 80, 164, 0.4)' }}>
               <Pill size={14} color="#fff" />
             </div>
-            <h2 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0, letterSpacing: '-0.02em' }}>
+            <h2 className="notranslate" translate="no" style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)', margin: 0, letterSpacing: '-0.02em' }}>
               {t('appName')}
             </h2>
           </div>
@@ -228,7 +228,7 @@ export const Sidebar = () => {
                     <Pill size={16} color="#fff" />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)' }}>
+                    <h3 className="notranslate" translate="no" style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--md-sys-color-on-surface)' }}>
                       {t('appName')}
                     </h3>
                     <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--md-sys-color-on-surface-variant)' }}>

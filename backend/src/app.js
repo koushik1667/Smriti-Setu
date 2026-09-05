@@ -57,6 +57,35 @@ if (express) {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+  const { getKeepAliveStatus } = require('./services/keepAliveService');
+
+  // Health check endpoints (placed before rate-limiting to prevent false blocks)
+  const handleHealthCheck = (req, res) => {
+    const keepAlive = getKeepAliveStatus();
+    res.json({
+      status: 'healthy',
+      service: 'PharmaVision AI Backend (Production Secured)',
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.floor(process.uptime()),
+      env: process.env.NODE_ENV || 'development',
+      keepAlive: {
+        enabled: keepAlive.enabled,
+        targetUrl: keepAlive.targetUrl,
+        intervalMinutes: Math.round(keepAlive.intervalMs / 60000),
+        totalPings: keepAlive.totalPings,
+        successfulPings: keepAlive.successfulPings,
+        failedPings: keepAlive.failedPings,
+        lastPingTime: keepAlive.lastPingTime,
+        lastStatus: keepAlive.lastStatus,
+        lastLatencyMs: keepAlive.lastLatencyMs,
+        nextPingTime: keepAlive.nextPingTime
+      }
+    });
+  };
+
+  app.get('/health', handleHealthCheck);
+  app.get('/api/health', handleHealthCheck);
+
   // Global API Rate Limiter: 150 requests per 15 mins
   const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -88,15 +117,6 @@ if (express) {
   app.use('/api/analyze-dual-audit', aiLimiter);
   app.use('/api/vision/chat', aiLimiter);
 
-  // Health check
-  app.get('/api/health', (req, res) => {
-    res.json({
-      status: 'healthy',
-      service: 'PharmaVision AI Backend (Production Secured)',
-      timestamp: new Date().toISOString(),
-      env: process.env.NODE_ENV || 'development'
-    });
-  });
 
   app.use('/api/auth', authRoutes);
   app.use('/api', visionRoutes);
@@ -145,10 +165,19 @@ if (express) {
 
     const parsedUrl = url.parse(req.url, true);
 
-    if (req.method === 'GET' && parsedUrl.pathname === '/api/health') {
+    if (req.method === 'GET' && (parsedUrl.pathname === '/api/health' || parsedUrl.pathname === '/health')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ status: 'healthy', service: 'PharmaVision AI Backend (Native)' }));
+      const { getKeepAliveStatus } = require('./services/keepAliveService');
+      const keepAlive = getKeepAliveStatus();
+      return res.end(JSON.stringify({
+        status: 'healthy',
+        service: 'PharmaVision AI Backend (Native)',
+        timestamp: new Date().toISOString(),
+        uptimeSeconds: Math.floor(process.uptime()),
+        keepAlive
+      }));
     }
+
 
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });

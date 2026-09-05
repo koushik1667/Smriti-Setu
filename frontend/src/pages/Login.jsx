@@ -41,7 +41,7 @@ export const Login = () => {
             <Pill size={20} color="var(--md-sys-color-on-primary)" />
           </div>
           <div>
-            <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--md-sys-color-on-surface)' }}>Smriti Setu</div>
+            <div className="notranslate" translate="no" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--md-sys-color-on-surface)' }}>Smriti Setu</div>
             <div style={{ fontSize: '0.72rem', color: 'var(--md-sys-color-on-surface-variant)' }}>Dementia & Memory Care</div>
           </div>
         </div>

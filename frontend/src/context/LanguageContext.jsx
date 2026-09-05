@@ -177,7 +177,7 @@ export const translations = {
 
   // ──────────────────────────── TELUGU (తెలుగు) ────────────────────────────
   te: {
-    appName: 'స్మృతి సేతు (Smriti Setu)',
+    appName: 'Smriti Setu',
     tagline: 'డిమెన్షియా & జ్ఞాపకశక్తి సాంత్వన మరియు సంరక్షణ',
     home: 'హోమ్',
     scanner: 'మందుల స్కానర్',
@@ -340,7 +340,7 @@ export const translations = {
 
   // ──────────────────────────── HINDI (हिन्दी) ────────────────────────────
   hi: {
-    appName: 'स्मृति सेतु (Smriti Setu)',
+    appName: 'Smriti Setu',
     tagline: 'डिमेंशिया और स्मरण शक्ति स्वास्थ्य सेवा',
     home: 'होम',
     scanner: 'दवा स्कैनर',
@@ -503,7 +503,7 @@ export const translations = {
 
   // ──────────────────────────── TAMIL (தமிழ்) ────────────────────────────
   ta: {
-    appName: 'ஸ்மிருதி சேது (Smriti Setu)',
+    appName: 'Smriti Setu',
     tagline: 'நினைவாற்றல் மற்றும் டிமென்ஷியா பராமரிப்பு நுண்ணறிவு',
     home: 'முகப்பு',
     scanner: 'மருந்து ஸ்கேனர்',
@@ -666,7 +666,7 @@ export const translations = {
 
   // ──────────────────────────── KANNADA (ಕನ್ನಡ) ────────────────────────────
   kn: {
-    appName: 'ಸ್ಮೃತಿ ಸೇತು (Smriti Setu)',
+    appName: 'Smriti Setu',
     tagline: 'ಸ್ಮರಣಶಕ್ತಿ ಮತ್ತು ಡಿಮೆನ್ಶಿಯಾ ಆರೈಕೆ ಬುದ್ಧಿವಂತಿಕೆ',
     home: 'ಮುಖಪುಟ',
     scanner: 'ಔಷಧಿ ಸ್ಕ್ಯಾನರ್',
@@ -829,7 +829,7 @@ export const translations = {
 
   // ──────────────────────────── BENGALI (বাংলা) ────────────────────────────
   bn: {
-    appName: 'স্মৃতি সেতু (Smriti Setu)',
+    appName: 'Smriti Setu',
     tagline: 'ডিমেনশিয়া ও স্মৃতিচর্চা যত্ন ব্যবস্থা',
     home: 'হোম',
     scanner: 'ওষুধ স্ক্যানার',
@@ -992,7 +992,7 @@ export const translations = {
 
   // ──────────────────────────── ASSAMESE (অসমীয়া) ────────────────────────────
   as: {
-    appName: 'স্মৃতি সেতু (Smriti Setu)',
+    appName: 'Smriti Setu',
     tagline: 'স্মৃতিশক্তি আৰু ডিমেনচিয়া সেৱা বুদ্ধিমত্তা',
     home: 'মুখ্যপৃষ্ঠা',
     scanner: 'ঔষধ স্কেনাৰ',
@@ -1155,7 +1155,7 @@ export const translations = {
 
   // ──────────────────────────── MARATHI (मराठी) ────────────────────────────
   mr: {
-    appName: 'स्मृती सेतू (Smriti Setu)',
+    appName: 'Smriti Setu',
     tagline: 'डिमेंशिया आणि स्मरणशक्ती काळजी सेवा',
     home: 'होम',
     scanner: 'औषध स्कॅनर',
@@ -1356,6 +1356,7 @@ export const LanguageProvider = ({ children }) => {
   }, []);
 
   const t = (key, params = {}) => {
+    if (key === 'appName') return 'Smriti Setu';
     let str = translations[lang]?.[key] || translations['en']?.[key] || key;
     if (typeof str === 'string') {
       Object.keys(params).forEach(p => {

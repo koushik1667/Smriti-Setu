@@ -17,7 +17,7 @@ export const Navbar = () => {
             <Pill size={22} color="#ffffff" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.1 }}>
+            <h1 className="notranslate" translate="no" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.1 }}>
               {t('appName')}
             </h1>
             <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>{t('tagline')}</p>

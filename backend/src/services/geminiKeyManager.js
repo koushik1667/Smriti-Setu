@@ -27,6 +27,8 @@ async function generateWithFailover({ prompt, parts = [], overrideKey = null, ge
   const customModel = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL.trim()] : [];
   const candidateModels = [
     ...customModel,
+    'gemini-3.6-flash',
+    'gemini-3.6',
     'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
@@ -34,6 +36,7 @@ async function generateWithFailover({ prompt, parts = [], overrideKey = null, ge
   ];
   // Deduplicate in case customModel matches one of the defaults
   const uniqueModels = [...new Set(candidateModels)];
+
 
   let lastError = null;
 
